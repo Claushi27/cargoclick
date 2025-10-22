@@ -2,11 +2,15 @@
 # Este archivo le dice a Netlify cómo compilar Flutter
 
 [build]
-  command = "flutter build web --release --web-renderer canvaskit"
+  command = """
+    # Instalar Flutter
+    git clone https://github.com/flutter/flutter.git -b stable --depth 1
+    export PATH="$PATH:`pwd`/flutter/bin"
+    flutter doctor
+    flutter pub get
+    flutter build web --release --web-renderer canvaskit
+  """
   publish = "build/web"
-
-[build.environment]
-  FLUTTER_VERSION = "3.24.0"
 
 [[redirects]]
   from = "/*"

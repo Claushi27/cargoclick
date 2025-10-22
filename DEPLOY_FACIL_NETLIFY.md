@@ -49,15 +49,11 @@
 3. Selecciona GitHub
 4. Autoriza Netlify
 5. Busca y selecciona `cargoclick`
-6. **Configuración del build:**
-   - Build command: `flutter build web --release`
-   - Publish directory: `build/web`
-   - Click "Show advanced" → Add environment variable:
-     - Key: `FLUTTER_VERSION`
-     - Value: `3.24.0`
+6. **NO configures nada manualmente** - El archivo `netlify.toml` ya tiene todo configurado
 7. Click "Deploy site"
+8. **ESPERA 10-15 MINUTOS** - La primera vez tarda porque descarga Flutter
 
-**IMPORTANTE**: Netlify necesita que agregues un archivo de configuración.
+**IMPORTANTE**: El archivo `netlify.toml` ya incluye la instalación de Flutter automáticamente.
 
 ---
 
