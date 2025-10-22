@@ -23,8 +23,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Download Google Fonts
+        run: |
+          flutter pub run google_fonts:download || echo "Google Fonts download skipped"
+        continue-on-error: true
+
       - name: Build web
-        run: flutter build web --release
+        run: flutter build web --release --verbose
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
