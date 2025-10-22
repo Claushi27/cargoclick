@@ -79,15 +79,27 @@
 
 ---
 
-## ⚡ RECOMENDACIÓN FINAL: CodeSandbox + Netlify
+## ⚡ RECOMENDACIÓN FINAL: GitHub Actions + Netlify Drop
+
+**El problema:** Netlify tarda mucho compilando Flutter y puede fallar.
+
+**La solución:** GitHub Actions compila y genera el build automáticamente, tú solo descargas y subes a Netlify Drop.
 
 Es la combinación perfecta porque:
-- No instalas nada
-- Editas código directo en el navegador
-- Compila automáticamente
-- Deploy con un click
-- Gratis
-- Perfecto para pruebas y desarrollo
+- GitHub Actions compila Flutter gratis en la nube
+- No necesitas instalar Flutter localmente
+- Recibes un archivo ZIP listo para usar
+- Lo arrastras a Netlify Drop en 10 segundos
+- Perfecto para pruebas rápidas
+
+### Cómo funciona:
+1. Subes código a GitHub
+2. GitHub Actions compila automáticamente
+3. Descargas el artifact (build/web.zip)
+4. Arrastras a https://app.netlify.com/drop
+5. ¡Listo!
+
+**¿Quieres que configure GitHub Actions en lugar de Netlify build?** Es más confiable.
 
 ## Próximos pasos AHORA MISMO:
 
