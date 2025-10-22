@@ -1,0 +1,14 @@
+# Netlify Build Configuration
+# Este archivo le dice a Netlify cómo compilar Flutter
+
+[build]
+  command = "flutter build web --release --web-renderer canvaskit"
+  publish = "build/web"
+
+[build.environment]
+  FLUTTER_VERSION = "3.24.0"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

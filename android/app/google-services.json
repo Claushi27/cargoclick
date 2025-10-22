@@ -1,0 +1,90 @@
+{
+  "project_info": {
+    "project_number": "655759945651",
+    "project_id": "sellora-2xtskv",
+    "storage_bucket": "sellora-2xtskv.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:655759945651:android:688c5a7f7cc61965b9a5c6",
+        "android_client_info": {
+          "package_name": "com.mycompany.CounterApp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "655759945651-08mjosrft3glvvl8681smk3sm91vquqp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAhQ63oBN60K9M0Q5OJWUrmOkWOtvH4aog"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "655759945651-08mjosrft3glvvl8681smk3sm91vquqp.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "655759945651-3vbu2pft8madnb7vf510qdraf7tpt4fk.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mycompany.CounterApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:655759945651:android:753363233caafa69b9a5c6",
+        "android_client_info": {
+          "package_name": "com.mycompany.mockupcargoclick"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "655759945651-qd4j04o332qp1qd7mguo3kajiki48s0r.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.mockupcargoclick",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        },
+        {
+          "client_id": "655759945651-08mjosrft3glvvl8681smk3sm91vquqp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAhQ63oBN60K9M0Q5OJWUrmOkWOtvH4aog"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "655759945651-08mjosrft3glvvl8681smk3sm91vquqp.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "655759945651-3vbu2pft8madnb7vf510qdraf7tpt4fk.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mycompany.CounterApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
