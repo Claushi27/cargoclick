@@ -29,21 +29,25 @@
       ]
     },
     {
-      "collectionGroup": "solicitudes",
+      "collectionGroup": "solicitantes",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
         {
-          "fieldPath": "flete_id",
+          "fieldPath": "cliente_id",
           "order": "ASCENDING"
         },
         {
           "fieldPath": "status",
           "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updated_at",
+          "order": "DESCENDING"
         }
       ]
     },
     {
-      "collectionGroup": "solicitudes",
+      "collectionGroup": "solicitantes",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
         {
@@ -51,7 +55,11 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "fecha_solicitud",
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "created_at",
           "order": "DESCENDING"
         }
       ]

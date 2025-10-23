@@ -69,7 +69,7 @@ service cloud.firestore {
 
       // Subcollection: solicitantes
       match /solicitantes/{choferId} {
-        // Lectura: el chofer solicitante o el cliente del flete pueden leer
+        // Lectura: cualquier autenticado puede leer
         allow read: if isAuthenticated();
         
         // Creación: el chofer puede crear su propia solicitud
@@ -86,6 +86,11 @@ service cloud.firestore {
         // Eliminación: solo el chofer que la creó
         allow delete: if isAuthenticated() && request.auth.uid == choferId;
       }
+    }
+    
+    // IMPORTANTE: Permitir collectionGroup queries en solicitantes
+    match /{path=**}/solicitantes/{choferId} {
+      allow read: if isAuthenticated();
     }
 
     // Fotos subcollection (legacy, si se usa)

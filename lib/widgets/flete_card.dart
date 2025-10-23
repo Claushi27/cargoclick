@@ -15,7 +15,38 @@ class FleteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDisponible = flete.estado == 'disponible';
+    final isSolicitado = flete.estado == 'solicitado';
     final isAsignado = flete.estado == 'asignado';
+    final isEnProceso = flete.estado == 'en_proceso';
+    final isCompletado = flete.estado == 'completado';
+    
+    // Determinar color y texto del badge de estado
+    Color estadoColor;
+    IconData estadoIcon;
+    String estadoTexto;
+    
+    if (isCompletado) {
+      estadoColor = Colors.purple;
+      estadoIcon = Icons.check_circle;
+      estadoTexto = 'Completado';
+    } else if (isEnProceso) {
+      estadoColor = Colors.blue;
+      estadoIcon = Icons.local_shipping;
+      estadoTexto = 'En Proceso';
+    } else if (isAsignado) {
+      estadoColor = Colors.green;
+      estadoIcon = Icons.assignment_turned_in;
+      estadoTexto = 'Asignado';
+    } else if (isSolicitado) {
+      estadoColor = Colors.orange;
+      estadoIcon = Icons.pending;
+      estadoTexto = 'Pendiente';
+    } else {
+      estadoColor = Colors.blue;
+      estadoIcon = Icons.fiber_new;
+      estadoTexto = 'Disponible';
+    }
 
     return Card(
       elevation: 4,
@@ -47,21 +78,17 @@ class FleteCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isAsignado ? Colors.green.withValues(alpha: 0.1) : Colors.amber.withValues(alpha: 0.2),
+                    color: estadoColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        isAsignado ? Icons.check_circle : Icons.access_time,
-                        color: isAsignado ? Colors.green : Colors.orange,
-                        size: 16,
-                      ),
+                      Icon(estadoIcon, color: estadoColor, size: 16),
                       const SizedBox(width: 4),
                       Text(
-                        isAsignado ? 'Asignado' : 'Publicado',
+                        estadoTexto,
                         style: TextStyle(
-                          color: isAsignado ? Colors.green : Colors.orange,
+                          color: estadoColor,
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                         ),
@@ -160,7 +187,7 @@ class FleteCard extends StatelessWidget {
                     color: Theme.of(context).colorScheme.secondary,
                   ),
                 ),
-                if (!isCliente && !isAsignado)
+                if (!isCliente && isDisponible)
                   ElevatedButton(
                     onPressed: onAceptar,
                     style: ElevatedButton.styleFrom(
@@ -173,6 +200,29 @@ class FleteCard extends StatelessWidget {
                     child: const Text(
                       'Aceptar',
                       style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                if (!isCliente && isSolicitado)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange, width: 1.5),
+                    ),
+                    child: Row(
+                      children: const [
+                        Icon(Icons.hourglass_empty, color: Colors.orange, size: 18),
+                        SizedBox(width: 6),
+                        Text(
+                          'Pendiente de aprobación',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
               ],

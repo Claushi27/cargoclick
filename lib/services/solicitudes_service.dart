@@ -51,11 +51,12 @@ class SolicitudesService {
       return const Stream.empty();
     }
     // Consulta todas las subcolecciones solicitantes donde cliente_id == clienteId
-    // Firestore no permite collectionGroup con filtro simple en subcampos, pero aquí usamos un collectionGroup
+    // Usa índice compuesto: cliente_id + status + updated_at
     return FirebaseFirestore.instance
         .collectionGroup('solicitantes')
         .where('cliente_id', isEqualTo: clienteId)
         .where('status', isEqualTo: 'pending')
+        .orderBy('updated_at', descending: true)
         .snapshots();
   }
 

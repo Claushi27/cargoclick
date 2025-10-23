@@ -29,9 +29,10 @@ class FleteService {
         'Firebase no está configurado. Abre el panel Firebase en Dreamflow y completa la configuración.',
       );
     }
+    // Mostrar fletes disponibles Y solicitados (para que no desaparezcan al aceptar)
     return FirebaseFirestore.instance
         .collection('fletes')
-        .where('estado', isEqualTo: 'disponible')
+        .where('estado', whereIn: ['disponible', 'solicitado'])
         .orderBy('fecha_publicacion', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
@@ -55,6 +56,8 @@ class FleteService {
   }
 
   Future<void> aceptarFlete(String fleteId, String transportistaId) async {
+    print('🚀 [aceptarFlete] Iniciando - fleteId: $fleteId, choferId: $transportistaId');
+    
     if (!_isBackendReady) {
       throw StateError(
         'Firebase no está configurado. Abre el panel Firebase en Dreamflow y completa la configuración.',
@@ -66,16 +69,26 @@ class FleteService {
     
     try {
       // Primero obtener datos del flete
+      print('📖 [aceptarFlete] Leyendo datos del flete...');
       final fleteDoc = await db.collection('fletes').doc(fleteId).get();
-      if (!fleteDoc.exists) throw StateError('Flete no encontrado');
+      if (!fleteDoc.exists) {
+        print('❌ [aceptarFlete] Flete no encontrado');
+        throw StateError('Flete no encontrado');
+      }
+      print('✅ [aceptarFlete] Flete encontrado');
+      
       final data = fleteDoc.data()!;
+      print('📊 [aceptarFlete] Estado actual del flete: ${data['estado']}');
       
       // Verificar que el flete esté disponible
       if (data['estado'] != 'disponible') {
+        print('⚠️ [aceptarFlete] Flete no disponible, estado: ${data['estado']}');
         throw StateError('Este flete ya no está disponible');
       }
       
       final clienteId = data['cliente_id'] as String;
+      print('👤 [aceptarFlete] Cliente ID: $clienteId');
+      
       final choferResumen = {'uid': transportistaId};
       final fleteResumen = {
         'numero_contenedor': data['numero_contenedor'],
@@ -84,6 +97,7 @@ class FleteService {
       };
 
       // Crear la solicitud primero
+      print('📝 [aceptarFlete] Creando solicitud en Firestore...');
       await db
           .collection('solicitudes')
           .doc(fleteId)
@@ -99,14 +113,19 @@ class FleteService {
         'flete_resumen': fleteResumen,
         'chofer_resumen': choferResumen,
       });
+      print('✅ [aceptarFlete] Solicitud creada exitosamente');
 
       // Luego actualizar estado del flete
+      print('🔄 [aceptarFlete] Actualizando estado del flete a "solicitado"...');
       try {
         await db.collection('fletes').doc(fleteId).update({
           'estado': 'solicitado',
           'updated_at': Timestamp.fromDate(now),
         });
+        print('✅ [aceptarFlete] Estado del flete actualizado exitosamente');
       } catch (e) {
+        print('❌ [aceptarFlete] Error al actualizar flete: $e');
+        print('🗑️ [aceptarFlete] Eliminando solicitud creada...');
         // Si falla actualizar el flete, eliminar la solicitud creada
         await db
             .collection('solicitudes')
@@ -114,10 +133,12 @@ class FleteService {
             .collection('solicitantes')
             .doc(transportistaId)
             .delete();
+        print('🗑️ [aceptarFlete] Solicitud eliminada (rollback)');
         rethrow;
       }
 
       // Notificación al cliente
+      print('🔔 [aceptarFlete] Enviando notificación al cliente...');
       try {
         await _noti.sendNotification(
           toUserId: clienteId,
@@ -125,12 +146,16 @@ class FleteService {
           body: 'Se creó una solicitud para el flete ${fleteResumen['numero_contenedor']}',
           data: {'flete_id': fleteId, 'chofer_id': transportistaId, 'type': 'solicitud_nueva'},
         );
+        print('✅ [aceptarFlete] Notificación enviada');
       } catch (e) {
         // No fallar si la notificación falla, solo registrar
-        print('Error enviando notificación: $e');
+        print('⚠️ [aceptarFlete] Error enviando notificación: $e');
       }
+      
+      print('🎉 [aceptarFlete] Proceso completado exitosamente');
     } catch (e) {
-      print('Error en aceptarFlete: $e');
+      print('💥 [aceptarFlete] Error general: $e');
+      print('💥 [aceptarFlete] Stack trace: ${StackTrace.current}');
       rethrow;
     }
   }
