@@ -6,6 +6,7 @@ class Checkpoint {
   final String choferId;
   final DateTime timestamp;
   final Map<String, double>? ubicacion;
+  final String? gpsLink; // Link de GPS en tiempo real
   final List<FotoCheckpoint> fotos;
   final String? notas;
   final bool completado;
@@ -17,6 +18,7 @@ class Checkpoint {
     required this.choferId,
     required this.timestamp,
     this.ubicacion,
+    this.gpsLink,
     required this.fotos,
     this.notas,
     required this.completado,
@@ -39,6 +41,7 @@ class Checkpoint {
       ubicacion: json['ubicacion'] != null
           ? Map<String, double>.from(json['ubicacion'] as Map)
           : null,
+      gpsLink: json['gps_link'] as String?,
       fotos: (json['fotos'] as List<dynamic>?)
               ?.map((f) => FotoCheckpoint.fromJson(f as Map<String, dynamic>))
               .toList() ??
@@ -54,6 +57,7 @@ class Checkpoint {
         'chofer_id': choferId,
         'timestamp': Timestamp.fromDate(timestamp),
         'ubicacion': ubicacion,
+        if (gpsLink != null && gpsLink!.isNotEmpty) 'gps_link': gpsLink,
         'fotos': fotos.map((f) => f.toJson()).toList(),
         'notas': notas,
         'completado': completado,

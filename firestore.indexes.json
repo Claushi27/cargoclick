@@ -5,7 +5,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "estado",
+          "fieldPath": "cliente_id",
           "order": "ASCENDING"
         },
         {
@@ -19,29 +19,11 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "transportista_asignado",
+          "fieldPath": "estado",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "fecha_asignacion",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "solicitantes",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "cliente_id",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "updated_at",
+          "fieldPath": "fecha_publicacion",
           "order": "DESCENDING"
         }
       ]
@@ -60,6 +42,24 @@
         },
         {
           "fieldPath": "created_at",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "solicitantes",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "cliente_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updated_at",
           "order": "DESCENDING"
         }
       ]

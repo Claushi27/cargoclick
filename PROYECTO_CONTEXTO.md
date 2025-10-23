@@ -289,6 +289,21 @@ Firestore Database → Indexes → Composite → Add index
 - **Solución:** Query simplificada, filtrado y ordenamiento en memoria
 - **Archivo:** `lib/services/flete_service.dart` - método `getFletesAsignadosChofer()`
 
+### ✅ ERROR 4: Reglas Firestore para solicitudes (SOLUCIONADO)
+- **Problema:** "Missing rules" al aprobar/rechazar solicitudes
+- **Solución:** Agregados permisos de `delete` y `update` para cliente en subcollection solicitantes
+- **Archivo:** `firestore.rules`
+
+### ✅ ERROR 5: Reglas Storage para fotos de checkpoints (SOLUCIONADO)
+- **Problema:** "Usuario no autorizado" al subir fotos
+- **Solución:** Agregadas reglas para subcollections checkpoints y fotos, permitiendo escritura a chofer asignado y cliente
+- **Archivo:** `firestore.rules` - reglas de fletes/checkpoints y fletes/fotos
+
+### ✅ ERROR 6: Link GPS en tiempo real (IMPLEMENTADO)
+- **Funcionalidad:** Chofer puede agregar link de GPS en tiempo real al checkpoint de Ubicación GPS
+- **Vista Cliente:** Puede ver y hacer clic en el link para ver ubicación en tiempo real
+- **Archivos:** `lib/models/checkpoint.dart`, `lib/services/checkpoint_service.dart`, `lib/screens/flete_detail_page.dart`
+
 ---
 
 ## ERRORES ACTUALES A RESOLVER

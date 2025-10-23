@@ -26,6 +26,7 @@ class _FleteDetailPageState extends State<FleteDetailPage> {
   Future<void> _subirCheckpoint(Map<String, dynamic> checkpointType) async {
     final tipo = checkpointType['id'] as String;
     final requiereFotos = checkpointType['requiereFotos'] as int;
+    final esUbicacionGPS = tipo == 'ubicacion_gps';
 
     // Mostrar diálogo para elegir fuente
     final source = await showModalBottomSheet<ImageSource?>(
@@ -78,6 +79,8 @@ class _FleteDetailPageState extends State<FleteDetailPage> {
 
     // Mostrar preview y confirmar
     final notaController = TextEditingController();
+    final gpsLinkController = TextEditingController();
+    
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -115,6 +118,25 @@ class _FleteDetailPageState extends State<FleteDetailPage> {
                 );
               }),
               const SizedBox(height: 12),
+              if (esUbicacionGPS) ...[
+                TextField(
+                  controller: gpsLinkController,
+                  decoration: const InputDecoration(
+                    labelText: 'Link GPS en tiempo real (opcional)',
+                    hintText: 'https://maps.google.com/...',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.link),
+                  ),
+                  keyboardType: TextInputType.url,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Puedes pegar un link de Google Maps u otro servicio de GPS',
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 12),
+              ],
               TextField(
                 controller: notaController,
                 decoration: const InputDecoration(
@@ -152,7 +174,10 @@ class _FleteDetailPageState extends State<FleteDetailPage> {
         notas: notaController.text.trim().isEmpty
             ? null
             : notaController.text.trim(),
-        ubicacion: null, // TODO: Implementar GPS
+        ubicacion: null, // TODO: Capturar GPS automático
+        gpsLink: gpsLinkController.text.trim().isEmpty
+            ? null
+            : gpsLinkController.text.trim(),
       );
 
       if (!mounted) return;
@@ -324,6 +349,33 @@ class _FleteDetailPageState extends State<FleteDetailPage> {
                                 color: Colors.green,
                               ),
                             ),
+                            if (checkpoint.gpsLink != null && checkpoint.gpsLink!.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              InkWell(
+                                onTap: () {
+                                  // TODO: Abrir link en navegador
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('GPS: ${checkpoint.gpsLink}')),
+                                  );
+                                },
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.location_on, size: 14, color: Colors.blue),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        'Ver ubicación en tiempo real',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.blue,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ],
                       ),

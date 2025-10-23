@@ -83,6 +83,7 @@ class CheckpointService {
     required List<Uint8List> fotos,
     String? notas,
     Map<String, double>? ubicacion,
+    String? gpsLink,
   }) async {
     final now = DateTime.now();
 
@@ -109,12 +110,7 @@ class CheckpointService {
     }
 
     // 2. Guardar checkpoint en Firestore
-    await _db
-        .collection('fletes')
-        .doc(fleteId)
-        .collection('checkpoints')
-        .doc(tipo)
-        .set({
+    final checkpointData = {
       'tipo': tipo,
       'chofer_id': choferId,
       'timestamp': Timestamp.fromDate(now),
@@ -123,7 +119,19 @@ class CheckpointService {
       'notas': notas,
       'completado': true,
       'created_at': Timestamp.fromDate(now),
-    });
+    };
+    
+    // Agregar GPS link si existe
+    if (gpsLink != null && gpsLink.isNotEmpty) {
+      checkpointData['gps_link'] = gpsLink;
+    }
+
+    await _db
+        .collection('fletes')
+        .doc(fleteId)
+        .collection('checkpoints')
+        .doc(tipo)
+        .set(checkpointData);
 
     // 3. Verificar si se completaron todos los checkpoints
     final checkpointsSnapshot = await _db
