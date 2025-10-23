@@ -40,8 +40,7 @@ service cloud.firestore {
         // O cualquier chofer puede cambiar estado de 'disponible' a 'solicitado'
         // (cuando acepta un flete)
         || (resource.data.estado == 'disponible' 
-            && request.resource.data.estado == 'solicitado'
-            && request.resource.data.keys().hasOnly(['estado', 'updated_at']))
+            && request.resource.data.estado == 'solicitado')
       );
       
       // Eliminación: solo el dueño puede eliminar

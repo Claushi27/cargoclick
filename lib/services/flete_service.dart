@@ -60,54 +60,79 @@ class FleteService {
         'Firebase no está configurado. Abre el panel Firebase en Dreamflow y completa la configuración.',
       );
     }
-    // Obtener datos mínimos para crear la solicitud y notificar al cliente
+    
     final db = FirebaseFirestore.instance;
-    final fleteDoc = await db.collection('fletes').doc(fleteId).get();
-    if (!fleteDoc.exists) throw StateError('Flete no encontrado');
-    final data = fleteDoc.data()!;
-    final clienteId = data['cliente_id'] as String;
-
-    // Chofer resumen se completa en el caller (UI) usualmente con nombre/email; si no, guardamos solo el id.
-    final choferResumen = {
-      'uid': transportistaId,
-    };
-    final fleteResumen = {
-      'numero_contenedor': data['numero_contenedor'],
-      'origen': data['origen'],
-      'destino': data['destino'],
-    };
-
-    // Crea la solicitud en /solicitudes/{fleteId}/solicitantes/{choferId}
     final now = DateTime.now();
-    await db
-        .collection('solicitudes')
-        .doc(fleteId)
-        .collection('solicitantes')
-        .doc(transportistaId)
-        .set({
-      'flete_id': fleteId,
-      'chofer_id': transportistaId,
-      'cliente_id': clienteId,
-      'status': 'pending',
-      'created_at': Timestamp.fromDate(now),
-      'updated_at': Timestamp.fromDate(now),
-      'flete_resumen': fleteResumen,
-      'chofer_resumen': choferResumen,
-    });
+    
+    try {
+      // Primero obtener datos del flete
+      final fleteDoc = await db.collection('fletes').doc(fleteId).get();
+      if (!fleteDoc.exists) throw StateError('Flete no encontrado');
+      final data = fleteDoc.data()!;
+      
+      // Verificar que el flete esté disponible
+      if (data['estado'] != 'disponible') {
+        throw StateError('Este flete ya no está disponible');
+      }
+      
+      final clienteId = data['cliente_id'] as String;
+      final choferResumen = {'uid': transportistaId};
+      final fleteResumen = {
+        'numero_contenedor': data['numero_contenedor'],
+        'origen': data['origen'],
+        'destino': data['destino'],
+      };
 
-    // ✅ Actualizar estado del flete a "solicitado"
-    await db.collection('fletes').doc(fleteId).update({
-      'estado': 'solicitado',
-      'updated_at': Timestamp.fromDate(now),
-    });
+      // Crear la solicitud primero
+      await db
+          .collection('solicitudes')
+          .doc(fleteId)
+          .collection('solicitantes')
+          .doc(transportistaId)
+          .set({
+        'flete_id': fleteId,
+        'chofer_id': transportistaId,
+        'cliente_id': clienteId,
+        'status': 'pending',
+        'created_at': Timestamp.fromDate(now),
+        'updated_at': Timestamp.fromDate(now),
+        'flete_resumen': fleteResumen,
+        'chofer_resumen': choferResumen,
+      });
 
-    // Notificación al cliente
-    await _noti.sendNotification(
-      toUserId: clienteId,
-      title: 'Chofer aceptó un flete',
-      body: 'Se creó una solicitud para el flete ${fleteResumen['numero_contenedor']}',
-      data: {'flete_id': fleteId, 'chofer_id': transportistaId, 'type': 'solicitud_nueva'},
-    );
+      // Luego actualizar estado del flete
+      try {
+        await db.collection('fletes').doc(fleteId).update({
+          'estado': 'solicitado',
+          'updated_at': Timestamp.fromDate(now),
+        });
+      } catch (e) {
+        // Si falla actualizar el flete, eliminar la solicitud creada
+        await db
+            .collection('solicitudes')
+            .doc(fleteId)
+            .collection('solicitantes')
+            .doc(transportistaId)
+            .delete();
+        rethrow;
+      }
+
+      // Notificación al cliente
+      try {
+        await _noti.sendNotification(
+          toUserId: clienteId,
+          title: 'Chofer aceptó un flete',
+          body: 'Se creó una solicitud para el flete ${fleteResumen['numero_contenedor']}',
+          data: {'flete_id': fleteId, 'chofer_id': transportistaId, 'type': 'solicitud_nueva'},
+        );
+      } catch (e) {
+        // No fallar si la notificación falla, solo registrar
+        print('Error enviando notificación: $e');
+      }
+    } catch (e) {
+      print('Error en aceptarFlete: $e');
+      rethrow;
+    }
   }
 
   Stream<List<Flete>> getFletesAsignadosChofer(String choferId) {

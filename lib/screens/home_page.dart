@@ -61,20 +61,45 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _aceptarFlete(String fleteId) async {
+    // Mostrar loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
     try {
       await _fleteService.aceptarFlete(fleteId, _usuario!.uid);
       if (mounted) {
+        Navigator.pop(context); // Cerrar loading
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('¡Flete aceptado exitosamente!'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        Navigator.pop(context); // Cerrar loading
+        
+        // Mensaje más detallado del error
+        String errorMsg = 'Error desconocido';
+        if (e.toString().contains('permission')) {
+          errorMsg = 'Error de permisos. Verifica las reglas de Firestore.';
+        } else if (e.toString().contains('no está disponible')) {
+          errorMsg = 'Este flete ya no está disponible';
+        } else {
+          errorMsg = e.toString();
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(errorMsg),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     }
