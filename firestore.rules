@@ -28,15 +28,20 @@ service cloud.firestore {
       allow create: if isAuthenticated() 
         && request.resource.data.cliente_id == request.auth.uid;
       
-      // Actualización: el dueño (cliente) o el chofer asignado pueden actualizar
+      // Actualización: diferentes permisos según el caso
       allow update: if isAuthenticated() && (
-        // El cliente que creó el flete
+        // El cliente que creó el flete puede hacer cualquier cambio
         request.auth.uid == resource.data.cliente_id
-        // O el chofer asignado al flete
+        
+        // O el chofer asignado puede actualizar checkpoints y estado
         || (resource.data.transportista_asignado != null 
             && request.auth.uid == resource.data.transportista_asignado)
-        // O el chofer que está en el proceso de aceptar (para cambiar estado a solicitado)
-        || resource.data.estado == 'disponible'
+        
+        // O cualquier chofer puede cambiar estado de 'disponible' a 'solicitado'
+        // (cuando acepta un flete)
+        || (resource.data.estado == 'disponible' 
+            && request.resource.data.estado == 'solicitado'
+            && request.resource.data.keys().hasOnly(['estado', 'updated_at']))
       );
       
       // Eliminación: solo el dueño puede eliminar
