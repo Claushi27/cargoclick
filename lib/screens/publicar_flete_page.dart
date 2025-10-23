@@ -47,7 +47,7 @@ class _PublicarFletePageState extends State<PublicarFletePage> {
         origen: _origenController.text.trim(),
         destino: _destinoController.text.trim(),
         tarifa: double.parse(_tarifaController.text.trim()),
-        estado: 'publicado',
+        estado: 'disponible', // ✅ Cambiado de 'publicado' a 'disponible'
         fechaPublicacion: now,
         createdAt: now,
         updatedAt: now,

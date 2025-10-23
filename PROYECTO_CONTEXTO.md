@@ -71,6 +71,28 @@ Marketplace para transporte de carga marítimo que conecta Admin (quien publica 
 
 ---
 
+## ESTADOS DEL FLETE (Ciclo de Vida)
+
+```
+disponible → solicitado → asignado → en_proceso → completado
+```
+
+| Estado | Descripción | Quién lo puede ver |
+|--------|-------------|-------------------|
+| **disponible** | Flete recién publicado por admin, esperando solicitudes | Admin, Choferes |
+| **solicitado** | Chofer envió solicitud, esperando aprobación admin | Admin, Chofer solicitante |
+| **asignado** | Admin aprobó solicitud, flete asignado a chofer | Admin, Chofer asignado |
+| **en_proceso** | Chofer comenzó checkpoints | Admin, Chofer asignado |
+| **completado** | Chofer completó los 5 checkpoints | Admin, Chofer asignado |
+
+**IMPORTANTE:** 
+- Al publicar flete → estado = **"disponible"**
+- Al aceptar flete → estado = **"solicitado"**
+- Al aprobar solicitud → estado = **"asignado"**
+- Al completar checkpoints → estado = **"completado"**
+
+---
+
 ## ESTRUCTURA DE DATOS
 
 ### Collection: users

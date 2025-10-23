@@ -95,6 +95,12 @@ class FleteService {
       'chofer_resumen': choferResumen,
     });
 
+    // ✅ Actualizar estado del flete a "solicitado"
+    await db.collection('fletes').doc(fleteId).update({
+      'estado': 'solicitado',
+      'updated_at': Timestamp.fromDate(now),
+    });
+
     // Notificación al cliente
     await _noti.sendNotification(
       toUserId: clienteId,
