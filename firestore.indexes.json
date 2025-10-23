@@ -1,0 +1,61 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "fletes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "estado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fecha_publicacion",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "fletes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "transportista_asignado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fecha_asignacion",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "solicitudes",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "flete_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "solicitudes",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "chofer_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fecha_solicitud",
+          "order": "DESCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

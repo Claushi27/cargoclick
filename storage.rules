@@ -1,0 +1,37 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function: check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Fotos de checkpoints de fletes
+    match /fletes/{fleteId}/checkpoints/{checkpointId}/{fileName} {
+      // Lectura: cualquier usuario autenticado
+      allow read: if isAuthenticated();
+      
+      // Escritura: cualquier usuario autenticado (el servicio valida que sea el chofer correcto)
+      allow write: if isAuthenticated();
+    }
+
+    // Fotos generales de fletes (legacy)
+    match /fletes/{fleteId}/fotos/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Fotos de perfil de usuarios
+    match /users/{userId}/profile/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Denegar todo lo demás
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

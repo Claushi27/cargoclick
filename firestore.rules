@@ -1,0 +1,98 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function: check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function: check if user owns the document
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    // Users collection: cada usuario solo puede leer/escribir su propio documento
+    match /users/{uid} {
+      allow create: if isAuthenticated() && request.auth.uid == uid;
+      allow read, update, delete: if isOwner(uid);
+    }
+
+    // Fletes collection
+    match /fletes/{fleteId} {
+      // Lectura: cualquier usuario autenticado puede leer fletes
+      allow read: if isAuthenticated();
+      
+      // Creación: solo el dueño (admin/cliente) puede crear fletes
+      allow create: if isAuthenticated() 
+        && request.resource.data.cliente_id == request.auth.uid;
+      
+      // Actualización: el dueño (cliente) o el chofer asignado pueden actualizar
+      allow update: if isAuthenticated() && (
+        // El cliente que creó el flete
+        request.auth.uid == resource.data.cliente_id
+        // O el chofer asignado al flete
+        || (resource.data.transportista_asignado != null 
+            && request.auth.uid == resource.data.transportista_asignado)
+        // O el chofer que está en el proceso de aceptar (para cambiar estado a solicitado)
+        || resource.data.estado == 'disponible'
+      );
+      
+      // Eliminación: solo el dueño puede eliminar
+      allow delete: if isAuthenticated() 
+        && request.auth.uid == resource.data.cliente_id;
+
+      // Subcollection: checkpoints
+      match /checkpoints/{checkpointId} {
+        // Lectura: cualquier autenticado puede leer
+        allow read: if isAuthenticated();
+        
+        // Escritura: solo el chofer asignado al flete padre
+        allow create, update: if isAuthenticated() 
+          && exists(/databases/$(database)/documents/fletes/$(fleteId))
+          && get(/databases/$(database)/documents/fletes/$(fleteId)).data.transportista_asignado == request.auth.uid;
+      }
+    }
+
+    // Solicitudes collection
+    match /solicitudes/{fleteId} {
+      // Lectura: cualquier autenticado puede leer
+      allow read: if isAuthenticated();
+      
+      // No se permite crear/actualizar/eliminar el documento padre directamente
+      allow write: if false;
+
+      // Subcollection: solicitantes
+      match /solicitantes/{choferId} {
+        // Lectura: el chofer solicitante o el cliente del flete pueden leer
+        allow read: if isAuthenticated();
+        
+        // Creación: el chofer puede crear su propia solicitud
+        allow create: if isAuthenticated() 
+          && request.auth.uid == choferId
+          && request.resource.data.chofer_id == request.auth.uid;
+        
+        // Actualización: el chofer o el cliente pueden actualizar
+        allow update: if isAuthenticated() && (
+          request.auth.uid == choferId
+          || request.auth.uid == resource.data.cliente_id
+        );
+        
+        // Eliminación: solo el chofer que la creó
+        allow delete: if isAuthenticated() && request.auth.uid == choferId;
+      }
+    }
+
+    // Fotos subcollection (legacy, si se usa)
+    match /fletes/{fleteId}/fotos/{fotoId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // Catch-all: denegar todo lo demás
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
