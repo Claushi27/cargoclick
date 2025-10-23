@@ -33,24 +33,34 @@ class Flete {
     required this.updatedAt,
   });
 
-  factory Flete.fromJson(Map<String, dynamic> json, {String? docId}) => Flete(
-    id: docId ?? json['id'] as String?,
-    clienteId: json['cliente_id'] as String,
-    tipoContenedor: json['tipo_contenedor'] as String,
-    numeroContenedor: json['numero_contenedor'] as String,
-    peso: (json['peso'] as num).toDouble(),
-    origen: json['origen'] as String,
-    destino: json['destino'] as String,
-    tarifa: (json['tarifa'] as num).toDouble(),
-    estado: json['estado'] as String,
-    fechaPublicacion: (json['fecha_publicacion'] as Timestamp).toDate(),
-    transportistaAsignado: json['transportista_asignado'] as String?,
-    fechaAsignacion: json['fecha_asignacion'] != null 
-        ? (json['fecha_asignacion'] as Timestamp).toDate() 
-        : null,
-    createdAt: (json['created_at'] as Timestamp).toDate(),
-    updatedAt: (json['updated_at'] as Timestamp).toDate(),
-  );
+  factory Flete.fromJson(Map<String, dynamic> json, {String? docId}) {
+    // Helper para convertir fechas que pueden venir como String o Timestamp
+    DateTime parseDate(dynamic value) {
+      if (value == null) return DateTime.now();
+      if (value is Timestamp) return value.toDate();
+      if (value is String) return DateTime.parse(value);
+      return DateTime.now();
+    }
+
+    return Flete(
+      id: docId ?? json['id'] as String?,
+      clienteId: json['cliente_id'] as String,
+      tipoContenedor: json['tipo_contenedor'] as String,
+      numeroContenedor: json['numero_contenedor'] as String,
+      peso: (json['peso'] as num).toDouble(),
+      origen: json['origen'] as String,
+      destino: json['destino'] as String,
+      tarifa: (json['tarifa'] as num).toDouble(),
+      estado: json['estado'] as String,
+      fechaPublicacion: parseDate(json['fecha_publicacion']),
+      transportistaAsignado: json['transportista_asignado'] as String?,
+      fechaAsignacion: json['fecha_asignacion'] != null 
+          ? parseDate(json['fecha_asignacion'])
+          : null,
+      createdAt: parseDate(json['created_at']),
+      updatedAt: parseDate(json['updated_at']),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     if (id != null) 'id': id,

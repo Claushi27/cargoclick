@@ -31,7 +31,7 @@ class FleteService {
     }
     return FirebaseFirestore.instance
         .collection('fletes')
-        .where('estado', isEqualTo: 'publicado')
+        .where('estado', isEqualTo: 'disponible')
         .orderBy('fecha_publicacion', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
@@ -108,14 +108,31 @@ class FleteService {
     if (!_isBackendReady) {
       return const Stream.empty();
     }
+    // Query simplificada para evitar necesitar índice compuesto
+    // Solo filtramos por chofer, ordenamos en memoria
     return FirebaseFirestore.instance
         .collection('fletes')
-        .where('estado', isEqualTo: 'asignado')
         .where('transportista_asignado', isEqualTo: choferId)
-        .orderBy('fecha_asignacion', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Flete.fromJson(doc.data(), docId: doc.id))
-            .toList());
+        .map((snapshot) {
+          final fletes = snapshot.docs
+              .map((doc) => Flete.fromJson(doc.data(), docId: doc.id))
+              .toList();
+          
+          // Filtrar por estados activos y ordenar por fecha en memoria
+          fletes.retainWhere((f) => 
+            f.estado == 'asignado' || 
+            f.estado == 'en_proceso' || 
+            f.estado == 'completado'
+          );
+          
+          fletes.sort((a, b) {
+            final dateA = a.fechaAsignacion ?? a.createdAt;
+            final dateB = b.fechaAsignacion ?? b.createdAt;
+            return dateB.compareTo(dateA); // Descendente
+          });
+          
+          return fletes;
+        });
   }
 }
