@@ -39,7 +39,7 @@ class Usuario {
   );
 
   Map<String, dynamic> toJson() {
-    final json = {
+    final Map<String, dynamic> json = <String, dynamic>{
       'uid': uid,
       'email': email,
       'display_name': displayName,
