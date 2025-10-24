@@ -24,7 +24,7 @@ class _MisRecorridosPageState extends State<MisRecorridosPage> {
         title: const Text('Mis Recorridos'),
       ),
       body: StreamBuilder<List<Flete>>(
-        stream: _fleteService.getFletesAsignadosChofer(widget.choferId),
+        stream: _fleteService.getFletesChoferAsignado(widget.choferId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -46,6 +46,12 @@ class _MisRecorridosPageState extends State<MisRecorridosPage> {
                           .withValues(alpha: 0.3)),
                   const SizedBox(height: 8),
                   const Text('No tienes recorridos activos.'),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Los fletes asignados por tu transportista aparecerán aquí',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             );

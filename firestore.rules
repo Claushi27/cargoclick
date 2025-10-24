@@ -19,6 +19,32 @@ service cloud.firestore {
       allow read, update, delete: if isOwner(uid);
     }
 
+    // Transportistas collection: cada transportista solo puede leer/escribir su propio documento
+    match /transportistas/{transportistaId} {
+      // Cualquier autenticado puede leer (para validar códigos de invitación)
+      allow read: if isAuthenticated();
+      
+      // Solo puede crear su propio documento al registrarse
+      allow create: if isAuthenticated() && request.auth.uid == transportistaId;
+      
+      // Solo puede actualizar/eliminar su propio documento
+      allow update, delete: if isOwner(transportistaId);
+    }
+
+    // Camiones collection: cada transportista gestiona sus propios camiones
+    match /camiones/{camionId} {
+      // Cualquier autenticado puede leer (necesario para asignación de fletes)
+      allow read: if isAuthenticated();
+      
+      // Solo el transportista dueño puede crear camiones
+      allow create: if isAuthenticated() 
+        && request.resource.data.transportista_id == request.auth.uid;
+      
+      // Solo el transportista dueño puede actualizar/eliminar
+      allow update, delete: if isAuthenticated() 
+        && resource.data.transportista_id == request.auth.uid;
+    }
+
     // Fletes collection
     match /fletes/{fleteId} {
       // Lectura: cualquier usuario autenticado puede leer fletes
@@ -33,7 +59,15 @@ service cloud.firestore {
         // El cliente que creó el flete puede hacer cualquier cambio
         request.auth.uid == resource.data.cliente_id
         
+        // O el transportista puede actualizar flete asignado a él
+        || (resource.data.transportista_id != null 
+            && request.auth.uid == resource.data.transportista_id)
+        
         // O el chofer asignado puede actualizar checkpoints y estado
+        || (resource.data.chofer_asignado != null 
+            && request.auth.uid == resource.data.chofer_asignado)
+        
+        // O el transportista_asignado (legacy) puede actualizar
         || (resource.data.transportista_asignado != null 
             && request.auth.uid == resource.data.transportista_asignado)
         

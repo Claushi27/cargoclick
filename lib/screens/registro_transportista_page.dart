@@ -2,35 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:cargoclick/services/auth_service.dart';
 import 'package:cargoclick/screens/home_page.dart';
 
-class RegistroPage extends StatefulWidget {
-  const RegistroPage({super.key});
+class RegistroTransportistaPage extends StatefulWidget {
+  const RegistroTransportistaPage({super.key});
 
   @override
-  State<RegistroPage> createState() => _RegistroPageState();
+  State<RegistroTransportistaPage> createState() => _RegistroTransportistaPageState();
 }
 
-class _RegistroPageState extends State<RegistroPage> {
+class _RegistroTransportistaPageState extends State<RegistroTransportistaPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _nombreController = TextEditingController();
-  final _empresaController = TextEditingController();
+  final _razonSocialController = TextEditingController();
+  final _rutEmpresaController = TextEditingController();
   final _telefonoController = TextEditingController();
-  final _codigoInvitacionController = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
   bool _obscurePassword = true;
-  // Registro solo para Choferes/Transportistas
-  static const String _rolForzado = 'Chofer';
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _nombreController.dispose();
-    _empresaController.dispose();
+    _razonSocialController.dispose();
+    _rutEmpresaController.dispose();
     _telefonoController.dispose();
-    _codigoInvitacionController.dispose();
     super.dispose();
   }
 
@@ -40,15 +36,12 @@ class _RegistroPageState extends State<RegistroPage> {
     setState(() => _isLoading = true);
 
     try {
-      await _authService.registrar(
+      await _authService.registrarTransportista(
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        displayName: _nombreController.text.trim(),
-        empresa: _empresaController.text.trim(),
-        phoneNumber: _telefonoController.text.trim(),
-        // Fuerza rol Chofer en backend
-        tipoUsuario: _rolForzado,
-        codigoInvitacion: _codigoInvitacionController.text.trim().toUpperCase(),
+        razonSocial: _razonSocialController.text.trim(),
+        rutEmpresa: _rutEmpresaController.text.trim(),
+        telefono: _telefonoController.text.trim(),
       );
 
       if (mounted) {
@@ -75,7 +68,7 @@ class _RegistroPageState extends State<RegistroPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Registro de Chofer'),
+        title: const Text('Registro de Transportista'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -87,28 +80,40 @@ class _RegistroPageState extends State<RegistroPage> {
               children: [
                 const SizedBox(height: 16),
                 Text(
-                  'Crear Cuenta de Chofer',
+                  'Crear Cuenta de Transportista',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Completa tus datos para comenzar',
+                  'Registra tu empresa de transporte',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(height: 32),
                 TextFormField(
-                  controller: _nombreController,
+                  controller: _razonSocialController,
                   decoration: InputDecoration(
-                    labelText: 'Nombre Completo',
-                    prefixIcon: const Icon(Icons.person_outlined),
+                    labelText: 'Razón Social',
+                    prefixIcon: const Icon(Icons.business),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     filled: true,
                   ),
-                  validator: (value) => value == null || value.isEmpty ? 'Ingresa tu nombre' : null,
+                  validator: (value) => value == null || value.isEmpty ? 'Ingresa la razón social' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _rutEmpresaController,
+                  decoration: InputDecoration(
+                    labelText: 'RUT Empresa',
+                    prefixIcon: const Icon(Icons.badge),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    filled: true,
+                    hintText: '12345678-9',
+                  ),
+                  validator: (value) => value == null || value.isEmpty ? 'Ingresa el RUT de la empresa' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -148,17 +153,6 @@ class _RegistroPageState extends State<RegistroPage> {
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
-                  controller: _empresaController,
-                  decoration: InputDecoration(
-                    labelText: 'Empresa',
-                    prefixIcon: const Icon(Icons.business_outlined),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    filled: true,
-                  ),
-                  validator: (value) => value == null || value.isEmpty ? 'Ingresa tu empresa' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
                   controller: _telefonoController,
                   keyboardType: TextInputType.phone,
                   decoration: InputDecoration(
@@ -169,44 +163,32 @@ class _RegistroPageState extends State<RegistroPage> {
                   ),
                   validator: (value) => value == null || value.isEmpty ? 'Ingresa tu teléfono' : null,
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _codigoInvitacionController,
-                  textCapitalization: TextCapitalization.characters,
-                  decoration: InputDecoration(
-                    labelText: 'Código de Invitación',
-                    prefixIcon: const Icon(Icons.vpn_key_outlined),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    filled: true,
-                    hintText: 'ABC123',
-                    helperText: 'Código proporcionado por tu transportista',
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Ingresa el código de invitación';
-                    }
-                    if (value.length != 6) {
-                      return 'El código debe tener 6 caracteres';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Explicación del rol fijo
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0, bottom: 24.0),
                   child: Row(
                     children: [
-                      const Icon(Icons.badge_outlined, size: 18),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Rol asignado: Chofer',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      Icon(
+                        Icons.info_outline,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Al registrarte recibirás un código de invitación para agregar choferes a tu flota',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -220,7 +202,7 @@ class _RegistroPageState extends State<RegistroPage> {
                     ),
                     child: _isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Registrarse', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        : const Text('Registrar Empresa', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(height: 16),

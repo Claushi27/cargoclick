@@ -11,7 +11,10 @@ class Flete {
   final double tarifa;
   final String estado;
   final DateTime fechaPublicacion;
-  final String? transportistaAsignado;
+  final String? transportistaId;        // NUEVO: ID del transportista que aceptó
+  final String? transportistaAsignado;  // LEGACY: mantener para compatibilidad (será = choferAsignado)
+  final String? choferAsignado;         // NUEVO: ID del chofer asignado
+  final String? camionAsignado;         // NUEVO: ID del camión asignado
   final DateTime? fechaAsignacion;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -27,7 +30,10 @@ class Flete {
     required this.tarifa,
     required this.estado,
     required this.fechaPublicacion,
+    this.transportistaId,
     this.transportistaAsignado,
+    this.choferAsignado,
+    this.camionAsignado,
     this.fechaAsignacion,
     required this.createdAt,
     required this.updatedAt,
@@ -53,7 +59,10 @@ class Flete {
       tarifa: (json['tarifa'] as num).toDouble(),
       estado: json['estado'] as String,
       fechaPublicacion: parseDate(json['fecha_publicacion']),
+      transportistaId: json['transportista_id'] as String?,
       transportistaAsignado: json['transportista_asignado'] as String?,
+      choferAsignado: json['chofer_asignado'] as String?,
+      camionAsignado: json['camion_asignado'] as String?,
       fechaAsignacion: json['fecha_asignacion'] != null 
           ? parseDate(json['fecha_asignacion'])
           : null,
@@ -62,24 +71,30 @@ class Flete {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    if (id != null) 'id': id,
-    'cliente_id': clienteId,
-    'tipo_contenedor': tipoContenedor,
-    'numero_contenedor': numeroContenedor,
-    'peso': peso,
-    'origen': origen,
-    'destino': destino,
-    'tarifa': tarifa,
-    'estado': estado,
-    'fecha_publicacion': Timestamp.fromDate(fechaPublicacion),
-    'transportista_asignado': transportistaAsignado,
-    'fecha_asignacion': fechaAsignacion != null 
-        ? Timestamp.fromDate(fechaAsignacion!) 
-        : null,
-    'created_at': Timestamp.fromDate(createdAt),
-    'updated_at': Timestamp.fromDate(updatedAt),
-  };
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{
+      'cliente_id': clienteId,
+      'tipo_contenedor': tipoContenedor,
+      'numero_contenedor': numeroContenedor,
+      'peso': peso,
+      'origen': origen,
+      'destino': destino,
+      'tarifa': tarifa,
+      'estado': estado,
+      'fecha_publicacion': Timestamp.fromDate(fechaPublicacion),
+      'created_at': Timestamp.fromDate(createdAt),
+      'updated_at': Timestamp.fromDate(updatedAt),
+    };
+    
+    if (id != null) json['id'] = id;
+    if (transportistaId != null) json['transportista_id'] = transportistaId;
+    if (transportistaAsignado != null) json['transportista_asignado'] = transportistaAsignado;
+    if (choferAsignado != null) json['chofer_asignado'] = choferAsignado;
+    if (camionAsignado != null) json['camion_asignado'] = camionAsignado;
+    if (fechaAsignacion != null) json['fecha_asignacion'] = Timestamp.fromDate(fechaAsignacion!);
+    
+    return json;
+  }
 
   Flete copyWith({
     String? id,
@@ -92,7 +107,10 @@ class Flete {
     double? tarifa,
     String? estado,
     DateTime? fechaPublicacion,
+    String? transportistaId,
     String? transportistaAsignado,
+    String? choferAsignado,
+    String? camionAsignado,
     DateTime? fechaAsignacion,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -107,7 +125,10 @@ class Flete {
     tarifa: tarifa ?? this.tarifa,
     estado: estado ?? this.estado,
     fechaPublicacion: fechaPublicacion ?? this.fechaPublicacion,
+    transportistaId: transportistaId ?? this.transportistaId,
     transportistaAsignado: transportistaAsignado ?? this.transportistaAsignado,
+    choferAsignado: choferAsignado ?? this.choferAsignado,
+    camionAsignado: camionAsignado ?? this.camionAsignado,
     fechaAsignacion: fechaAsignacion ?? this.fechaAsignacion,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,

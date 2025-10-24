@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cargoclick/services/auth_service.dart';
 import 'package:cargoclick/screens/registro_page.dart';
+import 'package:cargoclick/screens/registro_transportista_page.dart';
 import 'package:cargoclick/screens/home_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -171,9 +172,33 @@ class _LoginPageState extends State<LoginPage> {
                           );
                         },
                         child: Text(
-                          'Regístrate',
+                          'Regístrate como Chofer',
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.secondary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '¿Tienes una empresa? ',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (context) => const RegistroTransportistaPage()),
+                          );
+                        },
+                        child: Text(
+                          'Regístrate como Transportista',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

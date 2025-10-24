@@ -1,7 +1,9 @@
+import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cargoclick/models/usuario.dart';
+import 'package:cargoclick/models/transportista.dart';
 
 class AuthService {
   bool get _isBackendReady => Firebase.apps.isNotEmpty;
@@ -42,12 +44,30 @@ class AuthService {
     required String empresa,
     required String phoneNumber,
     required String tipoUsuario,
+    String? codigoInvitacion, // Código de invitación del transportista
   }) async {
     try {
       if (!_isBackendReady) {
         throw StateError(
           'Firebase no está configurado. Abre el panel Firebase en Dreamflow y completa la configuración.',
         );
+      }
+
+      // Validar código de invitación si es chofer
+      String? transportistaId;
+      if (tipoUsuario == 'Chofer' && codigoInvitacion != null && codigoInvitacion.isNotEmpty) {
+        // Buscar transportista con ese código
+        final transportistasQuery = await FirebaseFirestore.instance
+            .collection('transportistas')
+            .where('codigo_invitacion', isEqualTo: codigoInvitacion)
+            .limit(1)
+            .get();
+
+        if (transportistasQuery.docs.isEmpty) {
+          throw Exception('Código de invitación inválido');
+        }
+
+        transportistaId = transportistasQuery.docs.first.id;
       }
 
       final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
@@ -70,6 +90,8 @@ class AuthService {
         tipoUsuario: 'Chofer',
         empresa: empresa,
         phoneNumber: phoneNumber,
+        transportistaId: transportistaId,
+        codigoInvitacion: codigoInvitacion,
         createdAt: now,
         updatedAt: now,
       );
@@ -157,5 +179,90 @@ class AuthService {
       }
       rethrow;
     }
+  }
+
+  /// Genera un código único de 6 caracteres alfanuméricos para invitación
+  String _generarCodigoInvitacion() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = Random();
+    return String.fromCharCodes(
+      Iterable.generate(6, (_) => chars.codeUnitAt(random.nextInt(chars.length)))
+    );
+  }
+
+  /// Registra un nuevo Transportista con código de invitación único
+  Future<Transportista?> registrarTransportista({
+    required String email,
+    required String password,
+    required String razonSocial,
+    required String rutEmpresa,
+    required String telefono,
+  }) async {
+    try {
+      if (!_isBackendReady) {
+        throw StateError(
+          'Firebase no está configurado. Abre el panel Firebase en Dreamflow y completa la configuración.',
+        );
+      }
+
+      final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // Set basic profile on FirebaseAuth user
+      final user = userCredential.user;
+      if (user != null) {
+        await user.updateDisplayName(razonSocial);
+      }
+
+      final now = DateTime.now();
+      final codigoInvitacion = _generarCodigoInvitacion();
+
+      final transportista = Transportista(
+        uid: userCredential.user!.uid,
+        email: email,
+        razonSocial: razonSocial,
+        rutEmpresa: rutEmpresa,
+        telefono: telefono,
+        codigoInvitacion: codigoInvitacion,
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      await FirebaseFirestore.instance
+          .collection('transportistas')
+          .doc(transportista.uid)
+          .set(transportista.toJson());
+      
+      return transportista;
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        throw FirebaseException(
+          plugin: e.plugin,
+          code: e.code,
+          message:
+              'Permisos de Firestore insuficientes para crear el perfil. Actualiza las reglas para permitir que cada transportista cree su documento en /transportistas/{uid}.',
+        );
+      }
+      rethrow;
+    }
+  }
+
+  /// Obtiene el transportista actual autenticado
+  Future<Transportista?> getCurrentTransportista() async {
+    if (!_isBackendReady) {
+      throw StateError(
+        'Firebase no está configurado. Abre el panel Firebase en Dreamflow y completa la configuración.',
+      );
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+
+    final doc = await FirebaseFirestore.instance.collection('transportistas').doc(user.uid).get();
+    if (!doc.exists) return null;
+    
+    return Transportista.fromJson(doc.data()!);
   }
 }

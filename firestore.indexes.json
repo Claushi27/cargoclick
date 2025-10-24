@@ -63,6 +63,52 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "camiones",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "transportista_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "created_at",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "camiones",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "transportista_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "disponible",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "created_at",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "transportista_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "tipo_usuario",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
