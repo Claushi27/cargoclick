@@ -37,10 +37,13 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadUsuario() async {
     try {
+      print('🔄 [loadUsuario] Iniciando carga de usuario...');
+      
       // Primero intentar cargar como usuario (Cliente o Chofer)
       final usuario = await _authService.getCurrentUsuario();
       
       if (usuario != null) {
+        print('✅ [loadUsuario] Usuario encontrado: ${usuario.tipoUsuario} - ${usuario.displayName}');
         setState(() {
           _usuario = usuario;
           _tipoUsuario = usuario.tipoUsuario;
@@ -49,10 +52,13 @@ class _HomePageState extends State<HomePage> {
         return;
       }
 
+      print('⚠️ [loadUsuario] No es usuario regular, intentando transportista...');
+
       // Si no es usuario, intentar cargar como transportista
       final transportista = await _authService.getCurrentTransportista();
       
       if (transportista != null) {
+        print('✅ [loadUsuario] Transportista encontrado: ${transportista.razonSocial}');
         setState(() {
           _transportista = transportista;
           _tipoUsuario = 'Transportista';
@@ -61,6 +67,8 @@ class _HomePageState extends State<HomePage> {
         return;
       }
 
+      print('❌ [loadUsuario] No se encontró usuario ni transportista, redirigiendo al login...');
+
       // Si no es ni usuario ni transportista, redirigir al login
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -68,6 +76,7 @@ class _HomePageState extends State<HomePage> {
         );
       }
     } catch (e) {
+      print('💥 [loadUsuario] Error: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -138,6 +147,11 @@ class _HomePageState extends State<HomePage> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
+
+    // DEBUG: Ver qué tipo de usuario es
+    print('🔍 DEBUG - _tipoUsuario: $_tipoUsuario');
+    print('🔍 DEBUG - _usuario: ${_usuario?.tipoUsuario}');
+    print('🔍 DEBUG - _transportista: ${_transportista?.razonSocial}');
 
     // Vista Transportista
     if (_tipoUsuario == 'Transportista') {

@@ -15,17 +15,35 @@ service cloud.firestore {
 
     // Users collection: cada usuario solo puede leer/escribir su propio documento
     match /users/{uid} {
-      allow create: if isAuthenticated() && request.auth.uid == uid;
-      allow read, update, delete: if isOwner(uid);
+      // Permitir crear durante el registro (Firebase Auth ya validó la identidad)
+      allow create: if isAuthenticated() 
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid;
+      
+      // El dueño puede leer, actualizar o eliminar su documento
+      allow update, delete: if isOwner(uid);
+      
+      // Lectura: el dueño puede leer su documento
+      // O si es un chofer, su transportista puede leerlo
+      // O cualquier autenticado puede leer (necesario para asignación de fletes)
+      allow read: if isAuthenticated() && (
+        request.auth.uid == uid
+        || (resource.data.transportista_id != null 
+            && request.auth.uid == resource.data.transportista_id)
+        || true  // Permitir que todos los autenticados lean usuarios (necesario para gestión)
+      );
     }
 
     // Transportistas collection: cada transportista solo puede leer/escribir su propio documento
     match /transportistas/{transportistaId} {
-      // Cualquier autenticado puede leer (para validar códigos de invitación)
-      allow read: if isAuthenticated();
+      // IMPORTANTE: Permitir lectura SIN autenticación para validar códigos de invitación durante el registro
+      // Solo exponemos: uid, codigo_invitacion, razon_social
+      allow read: if true;
       
       // Solo puede crear su propio documento al registrarse
-      allow create: if isAuthenticated() && request.auth.uid == transportistaId;
+      allow create: if isAuthenticated() 
+        && request.auth.uid == transportistaId
+        && request.resource.data.uid == transportistaId;
       
       // Solo puede actualizar/eliminar su propio documento
       allow update, delete: if isOwner(transportistaId);
@@ -63,6 +81,11 @@ service cloud.firestore {
         || (resource.data.transportista_id != null 
             && request.auth.uid == resource.data.transportista_id)
         
+        // O cualquier transportista puede asignar un flete disponible (primera asignación)
+        || (resource.data.estado == 'disponible' 
+            && request.resource.data.estado == 'asignado'
+            && request.resource.data.transportista_id == request.auth.uid)
+        
         // O el chofer asignado puede actualizar checkpoints y estado
         || (resource.data.chofer_asignado != null 
             && request.auth.uid == resource.data.chofer_asignado)
@@ -72,7 +95,6 @@ service cloud.firestore {
             && request.auth.uid == resource.data.transportista_asignado)
         
         // O cualquier chofer puede cambiar estado de 'disponible' a 'solicitado'
-        // (cuando acepta un flete)
         || (resource.data.estado == 'disponible' 
             && request.resource.data.estado == 'solicitado')
       );

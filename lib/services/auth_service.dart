@@ -146,10 +146,25 @@ class AuthService {
 
   Future<void> _ensureUserDocExists(User? user) async {
     if (user == null) return;
+    
+    // Primero verificar si es transportista, si lo es NO crear documento en /users
+    final transportistaDoc = await FirebaseFirestore.instance
+        .collection('transportistas')
+        .doc(user.uid)
+        .get();
+    
+    if (transportistaDoc.exists) {
+      print('✅ [_ensureUserDocExists] Usuario es transportista, no se crea doc en /users');
+      return; // Es transportista, no crear en /users
+    }
+    
+    // No es transportista, verificar si ya existe en /users
     final users = FirebaseFirestore.instance.collection('users');
     final docRef = users.doc(user.uid);
     final snapshot = await docRef.get();
     if (snapshot.exists) return;
+
+    print('📝 [_ensureUserDocExists] Creando documento de usuario (Cliente/Chofer)...');
 
     final now = DateTime.now();
     final usuario = Usuario(
