@@ -145,11 +145,29 @@ class CheckpointService {
 
     // Si es el último checkpoint, marcar flete como completado
     if (completados == total) {
-      await _db.collection('fletes').doc(fleteId).update({
-        'estado': 'completado',
-        'fecha_completado': Timestamp.fromDate(now),
-        'updated_at': Timestamp.fromDate(now),
-      });
+      try {
+        await _db.collection('fletes').doc(fleteId).update({
+          'estado': 'completado',
+          'fecha_completado': Timestamp.fromDate(now),
+          'updated_at': Timestamp.fromDate(now),
+        });
+        print('✅ Flete marcado como completado');
+      } catch (e) {
+        print('⚠️ Error al actualizar estado del flete: $e');
+        // No lanzar el error, el checkpoint ya está guardado
+      }
+    } else {
+      // Actualizar solo updated_at para indicar progreso
+      try {
+        await _db.collection('fletes').doc(fleteId).update({
+          'estado': 'en_proceso',
+          'updated_at': Timestamp.fromDate(now),
+        });
+        print('✅ Flete actualizado a en_proceso');
+      } catch (e) {
+        print('⚠️ Error al actualizar flete: $e');
+        // No lanzar el error, el checkpoint ya está guardado
+      }
     }
 
     // 4. Notificar al admin

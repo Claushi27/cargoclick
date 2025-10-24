@@ -122,6 +122,11 @@ service cloud.firestore {
     match /{path=**}/solicitantes/{choferId} {
       allow read: if isAuthenticated();
     }
+    
+    // IMPORTANTE: Permitir collectionGroup queries en fotos
+    match /{path=**}/fotos/{fotoId} {
+      allow read: if isAuthenticated();
+    }
 
     // Catch-all: denegar todo lo demás
     match /{document=**} {

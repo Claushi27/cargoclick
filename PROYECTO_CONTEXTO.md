@@ -8,7 +8,9 @@ Marketplace para transporte de carga marítimo que conecta Admin (quien publica 
 ### ADMIN
 - Publica fletes nuevos
 - Aprueba/rechaza solicitudes de choferes
-- Ve todas las fotos subidas por choferes
+- Ve detalles de cada flete con checkpoints y fotos en tiempo real
+- Puede ver el progreso de cada flete (checkpoints completados)
+- Accede a links GPS en tiempo real compartidos por choferes
 - Ve lista de todos los choferes registrados
 
 ### CHOFER
@@ -260,14 +262,15 @@ Firestore Database → Indexes → Composite → Add index
 
 ### ADMIN
 - `/publicar-flete` - Formulario para crear flete
-- `/fletes-disponibles` - Lista de fletes publicados
-- `/solicitudes` - Lista de solicitudes pendientes (PENDIENTE IMPLEMENTAR)
-- `/galeria` - Todas las fotos de todos los fletes
+- `/` (home) - Lista de fletes publicados (clickeables)
+- `/flete-detalle` - Vista detallada de un flete con checkpoints, fotos y progreso en tiempo real
+- `/solicitudes` - Lista de solicitudes pendientes
 - `/choferes` - Lista de todos los choferes registrados
 
 ### CHOFER
 - `/fletes-disponibles` - Lista de fletes disponibles (solo lectura)
-- `/mis-recorridos` - Fletes asignados con botón "Subir Foto" (PENDIENTE IMPLEMENTAR)
+- `/mis-recorridos` - Fletes asignados con botón para ver detalles
+- `/flete-detalle` - Vista para subir checkpoints con fotos y link GPS
 - `/perfil` - Editar datos personales
 
 ---

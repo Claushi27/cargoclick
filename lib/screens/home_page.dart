@@ -7,7 +7,7 @@ import 'package:cargoclick/screens/login_page.dart';
 import 'package:cargoclick/screens/publicar_flete_page.dart';
 import 'package:cargoclick/screens/mis_recorridos_page.dart';
 import 'package:cargoclick/screens/solicitudes_page.dart';
-import 'package:cargoclick/screens/galeria_fletes_page.dart';
+import 'package:cargoclick/screens/fletes_cliente_detalle_page.dart';
 import 'package:cargoclick/widgets/flete_card.dart';
 
 class HomePage extends StatefulWidget {
@@ -198,15 +198,6 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           IconButton(
-            tooltip: 'Galería de Fletes',
-            icon: const Icon(Icons.photo_library_outlined),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => GaleriaFletesPage(clienteId: _usuario!.uid)),
-              );
-            },
-          ),
-          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,
             tooltip: 'Cerrar Sesión',
@@ -247,9 +238,18 @@ class _HomePageState extends State<HomePage> {
             itemCount: fletes.length,
             itemBuilder: (context, index) {
               final flete = fletes[index];
-              return FleteCard(
-                flete: flete,
-                isCliente: true,
+              return InkWell(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => FletesClienteDetallePage(flete: flete),
+                    ),
+                  );
+                },
+                child: FleteCard(
+                  flete: flete,
+                  isCliente: true,
+                ),
               );
             },
           );

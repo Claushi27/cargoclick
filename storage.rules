@@ -8,18 +8,13 @@ service firebase.storage {
       return request.auth != null;
     }
 
-    // Fotos de checkpoints de fletes
-    match /fletes/{fleteId}/checkpoints/{checkpointId}/{fileName} {
+    // Todas las fotos de fletes (checkpoints, fotos generales, etc)
+    match /fletes/{fleteId}/{allPaths=**} {
       // Lectura: cualquier usuario autenticado
       allow read: if isAuthenticated();
       
-      // Escritura: cualquier usuario autenticado (el servicio valida que sea el chofer correcto)
-      allow write: if isAuthenticated();
-    }
-
-    // Fotos generales de fletes (legacy)
-    match /fletes/{fleteId}/fotos/{fileName} {
-      allow read: if isAuthenticated();
+      // Escritura: cualquier usuario autenticado
+      // La lógica de negocio en el código valida que sea el chofer correcto
       allow write: if isAuthenticated();
     }
 
