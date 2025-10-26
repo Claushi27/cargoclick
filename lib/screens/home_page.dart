@@ -12,6 +12,8 @@ import 'package:cargoclick/screens/fletes_cliente_detalle_page.dart';
 import 'package:cargoclick/screens/perfil_transportista_page.dart';
 import 'package:cargoclick/screens/gestion_flota_page.dart';
 import 'package:cargoclick/screens/fletes_disponibles_transportista_page.dart';
+import 'package:cargoclick/screens/fletes_asignados_transportista_page.dart';
+import 'package:cargoclick/screens/lista_transportistas_choferes_page.dart';
 import 'package:cargoclick/widgets/flete_card.dart';
 
 class HomePage extends StatefulWidget {
@@ -37,31 +39,39 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadUsuario() async {
     try {
+      final currentUser = _authService.currentUser;
       print('🔄 [loadUsuario] Iniciando carga de usuario...');
+      print('🔍 [loadUsuario] UID actual: ${currentUser?.uid}');
+      print('🔍 [loadUsuario] Email actual: ${currentUser?.email}');
       
-      // Primero intentar cargar como usuario (Cliente o Chofer)
-      final usuario = await _authService.getCurrentUsuario();
+      // Primero intentar cargar como transportista (más específico)
+      final transportista = await _authService.getCurrentTransportista();
       
-      if (usuario != null) {
-        print('✅ [loadUsuario] Usuario encontrado: ${usuario.tipoUsuario} - ${usuario.displayName}');
+      if (transportista != null) {
+        print('✅ [loadUsuario] TRANSPORTISTA encontrado: ${transportista.razonSocial}');
+        print('✅ [loadUsuario] UID: ${transportista.uid}');
+        print('✅ [loadUsuario] Código: ${transportista.codigoInvitacion}');
         setState(() {
-          _usuario = usuario;
-          _tipoUsuario = usuario.tipoUsuario;
+          _transportista = transportista;
+          _tipoUsuario = 'Transportista';
+          _usuario = null; // Asegurar que usuario es null
           _isLoading = false;
         });
         return;
       }
 
-      print('⚠️ [loadUsuario] No es usuario regular, intentando transportista...');
+      print('⚠️ [loadUsuario] No es transportista, intentando usuario regular...');
 
-      // Si no es usuario, intentar cargar como transportista
-      final transportista = await _authService.getCurrentTransportista();
+      // Si no es transportista, intentar cargar como usuario (Cliente o Chofer)
+      final usuario = await _authService.getCurrentUsuario();
       
-      if (transportista != null) {
-        print('✅ [loadUsuario] Transportista encontrado: ${transportista.razonSocial}');
+      if (usuario != null) {
+        print('✅ [loadUsuario] USUARIO encontrado: ${usuario.tipoUsuario} - ${usuario.displayName}');
+        print('✅ [loadUsuario] UID: ${usuario.uid}');
         setState(() {
-          _transportista = transportista;
-          _tipoUsuario = 'Transportista';
+          _usuario = usuario;
+          _tipoUsuario = usuario.tipoUsuario;
+          _transportista = null; // Asegurar que transportista es null
           _isLoading = false;
         });
         return;
@@ -149,21 +159,31 @@ class _HomePageState extends State<HomePage> {
     }
 
     // DEBUG: Ver qué tipo de usuario es
-    print('🔍 DEBUG - _tipoUsuario: $_tipoUsuario');
-    print('🔍 DEBUG - _usuario: ${_usuario?.tipoUsuario}');
-    print('🔍 DEBUG - _transportista: ${_transportista?.razonSocial}');
+    print('🏗️ BUILD - _tipoUsuario: $_tipoUsuario');
+    print('🏗️ BUILD - _usuario: ${_usuario?.tipoUsuario}');
+    print('🏗️ BUILD - _transportista: ${_transportista?.razonSocial}');
+    print('🏗️ BUILD - Mostrando vista: ${_tipoUsuario ?? "DESCONOCIDO"}');
 
     // Vista Transportista
-    if (_tipoUsuario == 'Transportista') {
+    if (_tipoUsuario == 'Transportista' && _transportista != null) {
+      print('✅ Renderizando vista TRANSPORTISTA');
       return _buildTransportistaHome();
     }
 
     // Vista Cliente
-    if (_tipoUsuario == 'Cliente') {
+    if (_tipoUsuario == 'Cliente' && _usuario != null) {
+      print('✅ Renderizando vista CLIENTE');
       return _buildClienteHome();
     }
 
     // Vista Chofer
+    if (_tipoUsuario == 'Chofer' && _usuario != null) {
+      print('✅ Renderizando vista CHOFER');
+      return _buildChoferHome();
+    }
+
+    // Fallback - no debería llegar aquí
+    print('⚠️ FALLBACK - Mostrando vista chofer por defecto');
     return _buildChoferHome();
   }
 
@@ -255,6 +275,19 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 12),
           _buildMenuOption(
             context,
+            icon: Icons.assignment,
+            title: 'Mis Fletes Asignados',
+            subtitle: 'Ver fletes que he aceptado',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const FletesAsignadosTransportistaPage()),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildMenuOption(
+            context,
             icon: Icons.local_shipping,
             title: 'Gestión de Flota',
             subtitle: 'Administrar camiones y choferes',
@@ -338,6 +371,15 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('CargoClick'),
         actions: [
+          IconButton(
+            tooltip: 'Ver Transportistas y Choferes',
+            icon: const Icon(Icons.people_outline),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const ListaTransportistasChoferesPage()),
+              );
+            },
+          ),
           IconButton(
             tooltip: 'Solicitudes',
             icon: const Icon(Icons.how_to_reg_outlined),

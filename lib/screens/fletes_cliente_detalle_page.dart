@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cargoclick/models/flete.dart';
 import 'package:cargoclick/models/checkpoint.dart';
+import 'package:cargoclick/models/usuario.dart';
+import 'package:cargoclick/models/camion.dart';
 import 'package:cargoclick/services/checkpoint_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart';
 
 class FletesClienteDetallePage extends StatefulWidget {
   final Flete flete;
@@ -28,6 +32,45 @@ class _FletesClienteDetallePageState extends State<FletesClienteDetallePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('No se pudo abrir el link: $url')),
       );
+    }
+  }
+
+  Color _getColorSemaforo(String estado) {
+    switch (estado) {
+      case 'ok':
+        return Colors.green;
+      case 'proximo_vencer':
+        return Colors.orange;
+      case 'vencido':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getIconoSemaforo(String estado) {
+    switch (estado) {
+      case 'ok':
+        return Icons.check_circle;
+      case 'proximo_vencer':
+        return Icons.warning;
+      case 'vencido':
+        return Icons.cancel;
+      default:
+        return Icons.help;
+    }
+  }
+
+  String _getTextoSemaforo(String estado) {
+    switch (estado) {
+      case 'ok':
+        return 'Documentación al día';
+      case 'proximo_vencer':
+        return 'Próximo a vencer';
+      case 'vencido':
+        return 'Documentación vencida';
+      default:
+        return 'Desconocido';
     }
   }
 
@@ -104,6 +147,243 @@ class _FletesClienteDetallePageState extends State<FletesClienteDetallePage> {
                 ],
               ),
             ),
+
+            // Información de Asignación (si está asignado)
+            if (widget.flete.choferAsignado != null || widget.flete.camionAsignado != null) ...[
+              const Divider(),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Información de Asignación',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Info del Chofer
+                    if (widget.flete.choferAsignado != null)
+                      FutureBuilder<DocumentSnapshot>(
+                        future: FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(widget.flete.choferAsignado)
+                            .get(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return const CircularProgressIndicator();
+                          }
+                          
+                          if (!snapshot.data!.exists) {
+                            return const Text('Chofer no encontrado');
+                          }
+                          
+                          final chofer = Usuario.fromJson(
+                            snapshot.data!.data() as Map<String, dynamic>
+                          );
+                          
+                          return Card(
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: theme.colorScheme.secondaryContainer,
+                                child: Icon(
+                                  Icons.person,
+                                  color: theme.colorScheme.secondary,
+                                ),
+                              ),
+                              title: Text(
+                                'Chofer Asignado',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    chofer.displayName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  if (chofer.phoneNumber.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.phone, size: 14, color: Colors.grey[600]),
+                                        const SizedBox(width: 4),
+                                        Text(chofer.phoneNumber),
+                                      ],
+                                    ),
+                                  ],
+                                  if (chofer.empresa.isNotEmpty) ...[
+                                    const SizedBox(height: 2),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.business, size: 14, color: Colors.grey[600]),
+                                        const SizedBox(width: 4),
+                                        Text(chofer.empresa),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    
+                    const SizedBox(height: 12),
+                    
+                    // Info del Camión
+                    if (widget.flete.camionAsignado != null)
+                      FutureBuilder<DocumentSnapshot>(
+                        future: FirebaseFirestore.instance
+                            .collection('camiones')
+                            .doc(widget.flete.camionAsignado)
+                            .get(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return const CircularProgressIndicator();
+                          }
+                          
+                          if (!snapshot.data!.exists) {
+                            return const Text('Camión no encontrado');
+                          }
+                          
+                          final camion = Camion.fromJson(
+                            snapshot.data!.data() as Map<String, dynamic>,
+                            snapshot.data!.id,
+                          );
+                          
+                          return Card(
+                            child: ListTile(
+                              leading: Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.local_shipping,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                              title: Text(
+                                'Camión Asignado',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    camion.patente,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                      fontFamily: 'monospace',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.category, size: 14, color: Colors.grey[600]),
+                                      const SizedBox(width: 4),
+                                      Text(camion.tipo),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.verified_user, size: 14, color: Colors.grey[600]),
+                                      const SizedBox(width: 4),
+                                      Text(camion.seguroCarga),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: _getColorSemaforo(camion.estadoDocumentacion).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          _getIconoSemaforo(camion.estadoDocumentacion),
+                                          size: 14,
+                                          color: _getColorSemaforo(camion.estadoDocumentacion),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          _getTextoSemaforo(camion.estadoDocumentacion),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: _getColorSemaforo(camion.estadoDocumentacion),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    
+                    // Fecha de asignación
+                    if (widget.flete.fechaAsignacion != null) ...[
+                      const SizedBox(height: 12),
+                      Card(
+                        color: Colors.blue.shade50,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              Icon(Icons.schedule, color: Colors.blue.shade700),
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Asignado el',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                  Text(
+                                    DateFormat('dd/MM/yyyy HH:mm').format(widget.flete.fechaAsignacion!),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.blue.shade900,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
 
             // Progreso general
             FutureBuilder<Map<String, int>>(

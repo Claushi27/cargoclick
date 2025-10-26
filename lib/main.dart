@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:cargoclick/theme.dart';
 import 'package:cargoclick/screens/login_page.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -25,6 +26,19 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'CargoClick',
       debugShowCheckedModeBanner: false,
+      
+      // Configuración de localización en español
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('es', 'ES'), // Español
+        Locale('en', 'US'), // Inglés (fallback)
+      ],
+      locale: const Locale('es', 'ES'),
+      
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: ThemeMode.light,

@@ -288,11 +288,28 @@ class FleteService {
     return FirebaseFirestore.instance
         .collection('fletes')
         .where('transportista_id', isEqualTo: transportistaId)
-        .orderBy('fecha_asignacion', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Flete.fromJson(doc.data(), docId: doc.id))
-            .toList());
+        .map((snapshot) {
+          final fletes = snapshot.docs
+              .map((doc) => Flete.fromJson(doc.data(), docId: doc.id))
+              .toList();
+          
+          // Filtrar solo asignados (no disponibles ni solicitados)
+          fletes.retainWhere((f) => 
+            f.estado == 'asignado' || 
+            f.estado == 'en_proceso' || 
+            f.estado == 'completado'
+          );
+          
+          // Ordenar en memoria por fecha de asignación
+          fletes.sort((a, b) {
+            final dateA = a.fechaAsignacion ?? a.createdAt;
+            final dateB = b.fechaAsignacion ?? b.createdAt;
+            return dateB.compareTo(dateA); // Descendente
+          });
+          
+          return fletes;
+        });
   }
 
   /// Obtiene fletes asignados a un chofer específico (nuevo query)
