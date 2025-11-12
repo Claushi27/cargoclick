@@ -9,7 +9,12 @@ class Transportista {
   final String codigoInvitacion;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final double? tarifaMinima; // NUEVO - Tarifa mínima aceptable
+  final double? tarifaMinima; // Tarifa mínima aceptable
+  
+  // MÓDULO 1: Validación por Cliente
+  final bool isValidadoCliente; // Estado de validación
+  final String? clienteValidadorId; // ID del cliente que validó
+  final DateTime? fechaValidacion; // Fecha de validación
 
   Transportista({
     required this.uid,
@@ -21,6 +26,9 @@ class Transportista {
     required this.createdAt,
     required this.updatedAt,
     this.tarifaMinima,
+    this.isValidadoCliente = false,
+    this.clienteValidadorId,
+    this.fechaValidacion,
   });
 
   factory Transportista.fromJson(Map<String, dynamic> json) => Transportista(
@@ -35,6 +43,11 @@ class Transportista {
     tarifaMinima: json['tarifa_minima'] != null 
         ? (json['tarifa_minima'] as num).toDouble() 
         : null,
+    isValidadoCliente: json['is_validado_cliente'] as bool? ?? false,
+    clienteValidadorId: json['cliente_validador_id'] as String?,
+    fechaValidacion: json['fecha_validacion'] != null
+        ? (json['fecha_validacion'] as Timestamp).toDate()
+        : null,
   );
 
   Map<String, dynamic> toJson() => {
@@ -47,6 +60,9 @@ class Transportista {
     'created_at': Timestamp.fromDate(createdAt),
     'updated_at': Timestamp.fromDate(updatedAt),
     if (tarifaMinima != null) 'tarifa_minima': tarifaMinima,
+    'is_validado_cliente': isValidadoCliente,
+    if (clienteValidadorId != null) 'cliente_validador_id': clienteValidadorId,
+    if (fechaValidacion != null) 'fecha_validacion': Timestamp.fromDate(fechaValidacion!),
   };
 
   Transportista copyWith({
@@ -59,6 +75,9 @@ class Transportista {
     DateTime? createdAt,
     DateTime? updatedAt,
     double? tarifaMinima,
+    bool? isValidadoCliente,
+    String? clienteValidadorId,
+    DateTime? fechaValidacion,
   }) => Transportista(
     uid: uid ?? this.uid,
     email: email ?? this.email,
@@ -69,5 +88,8 @@ class Transportista {
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     tarifaMinima: tarifaMinima ?? this.tarifaMinima,
+    isValidadoCliente: isValidadoCliente ?? this.isValidadoCliente,
+    clienteValidadorId: clienteValidadorId ?? this.clienteValidadorId,
+    fechaValidacion: fechaValidacion ?? this.fechaValidacion,
   );
 }

@@ -14,6 +14,7 @@ import 'package:cargoclick/screens/gestion_flota_page.dart';
 import 'package:cargoclick/screens/fletes_disponibles_transportista_page.dart';
 import 'package:cargoclick/screens/fletes_asignados_transportista_page.dart';
 import 'package:cargoclick/screens/lista_transportistas_choferes_page.dart';
+import 'package:cargoclick/screens/validation_dashboard_page.dart'; // MÓDULO 1
 import 'package:cargoclick/widgets/flete_card.dart';
 
 class HomePage extends StatefulWidget {
@@ -371,6 +372,18 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('CargoClick'),
         actions: [
+          // MÓDULO 1: Botón Validar Flota
+          IconButton(
+            tooltip: 'Validar Flota',
+            icon: const Icon(Icons.verified_user),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ValidationDashboardPage(),
+                ),
+              );
+            },
+          ),
           IconButton(
             tooltip: 'Ver Transportistas y Choferes',
             icon: const Icon(Icons.people_outline),

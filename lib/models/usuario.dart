@@ -11,6 +11,11 @@ class Usuario {
   final String? codigoInvitacion;    // Código usado para registro (null si es cliente)
   final DateTime createdAt;
   final DateTime updatedAt;
+  
+  // MÓDULO 1: Validación por Cliente (solo para choferes)
+  final bool isValidadoCliente;
+  final String? clienteValidadorId;
+  final DateTime? fechaValidacion;
 
   Usuario({
     required this.uid,
@@ -23,6 +28,9 @@ class Usuario {
     this.codigoInvitacion,
     required this.createdAt,
     required this.updatedAt,
+    this.isValidadoCliente = false,
+    this.clienteValidadorId,
+    this.fechaValidacion,
   });
 
   factory Usuario.fromJson(Map<String, dynamic> json) => Usuario(
@@ -36,6 +44,11 @@ class Usuario {
     codigoInvitacion: json['codigo_invitacion'] as String?,
     createdAt: (json['created_at'] as Timestamp).toDate(),
     updatedAt: (json['updated_at'] as Timestamp).toDate(),
+    isValidadoCliente: json['is_validado_cliente'] as bool? ?? false,
+    clienteValidadorId: json['cliente_validador_id'] as String?,
+    fechaValidacion: json['fecha_validacion'] != null
+        ? (json['fecha_validacion'] as Timestamp).toDate()
+        : null,
   );
 
   Map<String, dynamic> toJson() {
@@ -48,10 +61,13 @@ class Usuario {
       'phone_number': phoneNumber,
       'created_at': Timestamp.fromDate(createdAt),
       'updated_at': Timestamp.fromDate(updatedAt),
+      'is_validado_cliente': isValidadoCliente,
     };
     
     if (transportistaId != null) json['transportista_id'] = transportistaId;
     if (codigoInvitacion != null) json['codigo_invitacion'] = codigoInvitacion;
+    if (clienteValidadorId != null) json['cliente_validador_id'] = clienteValidadorId;
+    if (fechaValidacion != null) json['fecha_validacion'] = Timestamp.fromDate(fechaValidacion!);
     
     return json;
   }
@@ -67,6 +83,9 @@ class Usuario {
     String? codigoInvitacion,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? isValidadoCliente,
+    String? clienteValidadorId,
+    DateTime? fechaValidacion,
   }) => Usuario(
     uid: uid ?? this.uid,
     email: email ?? this.email,
@@ -78,5 +97,8 @@ class Usuario {
     codigoInvitacion: codigoInvitacion ?? this.codigoInvitacion,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    isValidadoCliente: isValidadoCliente ?? this.isValidadoCliente,
+    clienteValidadorId: clienteValidadorId ?? this.clienteValidadorId,
+    fechaValidacion: fechaValidacion ?? this.fechaValidacion,
   );
 }

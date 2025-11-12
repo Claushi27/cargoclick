@@ -71,13 +71,36 @@ class _AsignarFletePageState extends State<AsignarFletePage> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+            const SizedBox(height: 8),
+            // MÓDULO 1: Banner informativo
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue.shade800, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Solo se muestran choferes validados por el cliente',
+                      style: TextStyle(
+                        color: Colors.blue.shade900,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 12),
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .where('transportista_id', isEqualTo: widget.transportistaId)
-                  .where('tipo_usuario', isEqualTo: 'Chofer')
-                  .snapshots(),
+            // MÓDULO 1: Usar FutureBuilder con choferes validados
+            FutureBuilder<List<Usuario>>(
+              future: _floteService.getChoferesValidados(widget.transportistaId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -87,7 +110,7 @@ class _AsignarFletePageState extends State<AsignarFletePage> {
                   return Text('Error: ${snapshot.error}');
                 }
 
-                final choferes = snapshot.data?.docs ?? [];
+                final choferes = snapshot.data ?? [];
 
                 if (choferes.isEmpty) {
                   return Container(
@@ -103,7 +126,7 @@ class _AsignarFletePageState extends State<AsignarFletePage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'No tienes choferes registrados. Comparte tu código de invitación con tus choferes.',
+                            'No tienes choferes validados. El cliente debe aprobar a tus choferes desde el Dashboard de Validación.',
                             style: TextStyle(color: Colors.orange.shade900),
                           ),
                         ),
@@ -113,9 +136,7 @@ class _AsignarFletePageState extends State<AsignarFletePage> {
                 }
 
                 return Column(
-                  children: choferes.map((doc) {
-                    final choferData = doc.data() as Map<String, dynamic>;
-                    final chofer = Usuario.fromJson(choferData);
+                  children: choferes.map((chofer) {
                     final isSelected = _choferSeleccionado?.uid == chofer.uid;
 
                     return Card(
@@ -123,22 +144,67 @@ class _AsignarFletePageState extends State<AsignarFletePage> {
                           ? Theme.of(context).colorScheme.primaryContainer
                           : null,
                       child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: isSelected
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.primaryContainer,
-                          child: Icon(
-                            Icons.person,
-                            color: isSelected
-                                ? Colors.white
-                                : Theme.of(context).colorScheme.primary,
-                          ),
+                        leading: Stack(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: isSelected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.primaryContainer,
+                              child: Icon(
+                                Icons.person,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                            // Badge validado
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 1.5),
+                                ),
+                                child: const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        title: Text(
-                          chofer.displayName,
-                          style: TextStyle(
-                            fontWeight: isSelected ? FontWeight.bold : null,
-                          ),
+                        title: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                chofer.displayName,
+                                style: TextStyle(
+                                  fontWeight: isSelected ? FontWeight.bold : null,
+                                ),
+                              ),
+                            ),
+                            // Badge VALIDADO
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.green.shade300),
+                              ),
+                              child: Text(
+                                'VALIDADO',
+                                style: TextStyle(
+                                  color: Colors.green.shade800,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         subtitle: Text(chofer.email),
                         trailing: isSelected
@@ -160,9 +226,36 @@ class _AsignarFletePageState extends State<AsignarFletePage> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+            const SizedBox(height: 8),
+            // MÓDULO 1: Banner informativo
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue.shade800, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Solo se muestran camiones validados por el cliente',
+                      style: TextStyle(
+                        color: Colors.blue.shade900,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 12),
-            StreamBuilder<List<Camion>>(
-              stream: _floteService.obtenerCamionesDisponibles(widget.transportistaId),
+            // MÓDULO 1: Usar FutureBuilder con camiones validados
+            FutureBuilder<List<Camion>>(
+              future: _floteService.getCamionesValidados(widget.transportistaId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -188,7 +281,7 @@ class _AsignarFletePageState extends State<AsignarFletePage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'No tienes camiones disponibles. Agrega camiones en Gestión de Flota.',
+                            'No tienes camiones validados. El cliente debe aprobar tus camiones desde el Dashboard de Validación.',
                             style: TextStyle(color: Colors.orange.shade900),
                           ),
                         ),
@@ -226,22 +319,66 @@ class _AsignarFletePageState extends State<AsignarFletePage> {
                           ? Theme.of(context).colorScheme.primaryContainer
                           : null,
                       child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: isSelected
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.primaryContainer,
-                          child: Icon(
-                            Icons.local_shipping,
-                            color: isSelected
-                                ? Colors.white
-                                : Theme.of(context).colorScheme.primary,
-                          ),
+                        leading: Stack(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: isSelected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.primaryContainer,
+                              child: Icon(
+                                Icons.local_shipping,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                            // Badge validado
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 1.5),
+                                ),
+                                child: const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        title: Text(
-                          camion.patente,
-                          style: TextStyle(
-                            fontWeight: isSelected ? FontWeight.bold : null,
-                          ),
+                        title: Row(
+                          children: [
+                            Text(
+                              camion.patente,
+                              style: TextStyle(
+                                fontWeight: isSelected ? FontWeight.bold : null,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Badge VALIDADO
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.green.shade300),
+                              ),
+                              child: Text(
+                                'VALIDADO',
+                                style: TextStyle(
+                                  color: Colors.green.shade800,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         subtitle: Text('${camion.tipo} - Seguro: \$${camion.seguroCarga}'),
                         trailing: Row(

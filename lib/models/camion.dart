@@ -11,6 +11,16 @@ class Camion {
   final bool disponible;
   final DateTime createdAt;
   final DateTime updatedAt;
+  
+  // MÓDULO 1: Campos adicionales de seguro
+  final String numeroPoliza;
+  final String companiaSeguro;
+  final String nombreSeguro;
+  
+  // MÓDULO 1: Validación por Cliente
+  final bool isValidadoCliente;
+  final String? clienteValidadorId;
+  final DateTime? fechaValidacion;
 
   Camion({
     required this.id,
@@ -23,6 +33,12 @@ class Camion {
     required this.disponible,
     required this.createdAt,
     required this.updatedAt,
+    required this.numeroPoliza,
+    required this.companiaSeguro,
+    required this.nombreSeguro,
+    this.isValidadoCliente = false,
+    this.clienteValidadorId,
+    this.fechaValidacion,
   });
 
   factory Camion.fromJson(Map<String, dynamic> json, String id) => Camion(
@@ -36,6 +52,14 @@ class Camion {
     disponible: json['disponible'] as bool? ?? true,
     createdAt: (json['created_at'] as Timestamp).toDate(),
     updatedAt: (json['updated_at'] as Timestamp).toDate(),
+    numeroPoliza: json['numero_poliza'] as String? ?? '',
+    companiaSeguro: json['compania_seguro'] as String? ?? '',
+    nombreSeguro: json['nombre_seguro'] as String? ?? '',
+    isValidadoCliente: json['is_validado_cliente'] as bool? ?? false,
+    clienteValidadorId: json['cliente_validador_id'] as String?,
+    fechaValidacion: json['fecha_validacion'] != null
+        ? (json['fecha_validacion'] as Timestamp).toDate()
+        : null,
   );
 
   Map<String, dynamic> toJson() => {
@@ -48,6 +72,12 @@ class Camion {
     'disponible': disponible,
     'created_at': Timestamp.fromDate(createdAt),
     'updated_at': Timestamp.fromDate(updatedAt),
+    'numero_poliza': numeroPoliza,
+    'compania_seguro': companiaSeguro,
+    'nombre_seguro': nombreSeguro,
+    'is_validado_cliente': isValidadoCliente,
+    if (clienteValidadorId != null) 'cliente_validador_id': clienteValidadorId,
+    if (fechaValidacion != null) 'fecha_validacion': Timestamp.fromDate(fechaValidacion!),
   };
 
   /// Calcula el estado de documentación basado en la fecha de vencimiento
@@ -72,6 +102,12 @@ class Camion {
     bool? disponible,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? numeroPoliza,
+    String? companiaSeguro,
+    String? nombreSeguro,
+    bool? isValidadoCliente,
+    String? clienteValidadorId,
+    DateTime? fechaValidacion,
   }) => Camion(
     id: id ?? this.id,
     transportistaId: transportistaId ?? this.transportistaId,
@@ -83,5 +119,11 @@ class Camion {
     disponible: disponible ?? this.disponible,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    numeroPoliza: numeroPoliza ?? this.numeroPoliza,
+    companiaSeguro: companiaSeguro ?? this.companiaSeguro,
+    nombreSeguro: nombreSeguro ?? this.nombreSeguro,
+    isValidadoCliente: isValidadoCliente ?? this.isValidadoCliente,
+    clienteValidadorId: clienteValidadorId ?? this.clienteValidadorId,
+    fechaValidacion: fechaValidacion ?? this.fechaValidacion,
   );
 }

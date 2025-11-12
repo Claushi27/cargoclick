@@ -425,6 +425,9 @@ class _GestionFlotaPageState extends State<GestionFlotaPage> with SingleTickerPr
     final formKey = GlobalKey<FormState>();
     final patenteController = TextEditingController();
     final seguroController = TextEditingController();
+    final numeroPolizaController = TextEditingController();
+    final companiaSeguroController = TextEditingController();
+    final nombreSeguroController = TextEditingController();
     DateTime? fechaVencimiento;
     String tipoSeleccionado = 'CTN Std 20';
 
@@ -487,6 +490,52 @@ class _GestionFlotaPageState extends State<GestionFlotaPage> with SingleTickerPr
                         value == null || value.isEmpty ? 'Ingresa el monto' : null,
                   ),
                   const SizedBox(height: 16),
+                  
+                  // MÓDULO 1: Campos adicionales de seguro
+                  const Divider(),
+                  const Text(
+                    'Información de Póliza',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: numeroPolizaController,
+                    decoration: const InputDecoration(
+                      labelText: 'Número de Póliza *',
+                      prefixIcon: Icon(Icons.policy),
+                      hintText: 'Ej: 123456789',
+                      helperText: 'Número identificador de la póliza',
+                    ),
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Ingresa el número de póliza' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: companiaSeguroController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(
+                      labelText: 'Compañía de Seguro *',
+                      prefixIcon: Icon(Icons.business),
+                      hintText: 'Ej: Chilena Consolidada',
+                    ),
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Ingresa la compañía' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: nombreSeguroController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre del Seguro *',
+                      prefixIcon: Icon(Icons.shield),
+                      hintText: 'Ej: Seguro Todo Riesgo',
+                    ),
+                    validator: (value) =>
+                        value == null || value.isEmpty ? 'Ingresa el nombre del seguro' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.calendar_today),
@@ -527,6 +576,9 @@ class _GestionFlotaPageState extends State<GestionFlotaPage> with SingleTickerPr
                       tipo: tipoSeleccionado,
                       seguroCarga: seguroController.text,
                       docVencimiento: fechaVencimiento!,
+                      numeroPoliza: numeroPolizaController.text,
+                      companiaSeguro: companiaSeguroController.text,
+                      nombreSeguro: nombreSeguroController.text,
                     );
 
                     if (context.mounted) {
