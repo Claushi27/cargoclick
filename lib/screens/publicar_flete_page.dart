@@ -21,7 +21,7 @@ class _PublicarFletePageState extends State<PublicarFletePage> {
   final _destinoController = TextEditingController();
   final _tarifaController = TextEditingController();
   
-  // Controllers nuevos
+  // Controllers FASE 2/3
   final _pesoCargaNetaController = TextEditingController();
   final _pesoTaraController = TextEditingController();
   final _puertoOrigenController = TextEditingController();
@@ -30,11 +30,23 @@ class _PublicarFletePageState extends State<PublicarFletePage> {
   final _requisitosEspecialesController = TextEditingController();
   final _serviciosAdicionalesController = TextEditingController();
   
+  // MÓDULO 2: Controllers nuevos
+  final _valorPerimetroController = TextEditingController();
+  final _rutIngresoStiController = TextEditingController();
+  final _rutIngresoPcController = TextEditingController();
+  final _tipoRamplaController = TextEditingController();
+  
   final _fleteService = FleteService();
   
   String _tipoContenedor = 'CTN Std 20';
+  String _puertoOrigen = 'San Antonio'; // MÓDULO 2: Puerto por defecto
   DateTime? _fechaHoraCarga;
   bool _isLoading = false;
+  
+  // MÓDULO 2: Estados nuevos
+  bool _isFueraDePerimetro = false;
+  double? _valorAdicionalSobrepeso;
+  bool _mostrarAlertaSobrepeso = false;
 
   @override
   void dispose() {
@@ -49,13 +61,34 @@ class _PublicarFletePageState extends State<PublicarFletePage> {
     _devolucionCtnVacioController.dispose();
     _requisitosEspecialesController.dispose();
     _serviciosAdicionalesController.dispose();
+    // MÓDULO 2
+    _valorPerimetroController.dispose();
+    _rutIngresoStiController.dispose();
+    _rutIngresoPcController.dispose();
+    _tipoRamplaController.dispose();
     super.dispose();
   }
 
   double _calcularPesoTotal() {
     final cargaNeta = double.tryParse(_pesoCargaNetaController.text) ?? 0;
     final tara = double.tryParse(_pesoTaraController.text) ?? 0;
-    return cargaNeta + tara;
+    final pesoTotal = cargaNeta + tara;
+    
+    // MÓDULO 2: Validar sobrepeso (> 25 toneladas = 25,000 kg)
+    if (pesoTotal > 25000) {
+      if (!_mostrarAlertaSobrepeso) {
+        setState(() => _mostrarAlertaSobrepeso = true);
+      }
+    } else {
+      if (_mostrarAlertaSobrepeso) {
+        setState(() {
+          _mostrarAlertaSobrepeso = false;
+          _valorAdicionalSobrepeso = null;
+        });
+      }
+    }
+    
+    return pesoTotal;
   }
 
   Future<void> _seleccionarFechaHora() async {
@@ -103,9 +136,7 @@ class _PublicarFletePageState extends State<PublicarFletePage> {
         pesoTara: double.tryParse(_pesoTaraController.text.trim()),
         peso: pesoTotal,
         origen: _origenController.text.trim(),
-        puertoOrigen: _puertoOrigenController.text.isNotEmpty 
-            ? _puertoOrigenController.text.trim() 
-            : null,
+        puertoOrigen: _puertoOrigen, // MÓDULO 2: Usar dropdown
         destino: _destinoController.text.trim(),
         direccionDestino: _direccionDestinoController.text.isNotEmpty 
             ? _direccionDestinoController.text.trim() 
@@ -119,6 +150,21 @@ class _PublicarFletePageState extends State<PublicarFletePage> {
             : null,
         serviciosAdicionales: _serviciosAdicionalesController.text.isNotEmpty 
             ? _serviciosAdicionalesController.text.trim() 
+            : null,
+        // MÓDULO 2: Campos nuevos
+        isFueraDePerimetro: _isFueraDePerimetro,
+        valorAdicionalPerimetro: _isFueraDePerimetro && _valorPerimetroController.text.isNotEmpty
+            ? double.tryParse(_valorPerimetroController.text.trim())
+            : null,
+        valorAdicionalSobrepeso: _valorAdicionalSobrepeso,
+        rutIngresoSti: _rutIngresoStiController.text.isNotEmpty
+            ? _rutIngresoStiController.text.trim()
+            : null,
+        rutIngresoPc: _rutIngresoPcController.text.isNotEmpty
+            ? _rutIngresoPcController.text.trim()
+            : null,
+        tipoDeRampla: _tipoRamplaController.text.isNotEmpty
+            ? _tipoRamplaController.text.trim()
             : null,
         tarifa: double.parse(_tarifaController.text.trim()),
         estado: 'disponible',
@@ -252,6 +298,75 @@ class _PublicarFletePageState extends State<PublicarFletePage> {
                 ),
               ],
               
+              // MÓDULO 2: Alert de sobrepeso
+              if (_mostrarAlertaSobrepeso) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.orange.shade300, width: 2),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.warning_amber_rounded, 
+                            color: Colors.orange.shade800,
+                            size: 28,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              '⚠️ SOBREPESO DETECTADO',
+                              style: TextStyle(
+                                color: Colors.orange.shade900,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'El peso total excede las 25 toneladas (25,000 kg). Se recomienda añadir un valor adicional por sobrepeso.',
+                        style: TextStyle(
+                          color: Colors.orange.shade800,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Valor Adicional por Sobrepeso (opcional)',
+                          prefixText: '\$ ',
+                          prefixIcon: Icon(Icons.attach_money, color: Colors.orange.shade700),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.orange.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.orange.shade300),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            _valorAdicionalSobrepeso = double.tryParse(value);
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              
               const SizedBox(height: 24),
               
               // ========== SECCIÓN 3: ORIGEN Y FECHA ==========
@@ -265,9 +380,15 @@ class _PublicarFletePageState extends State<PublicarFletePage> {
               ),
               const SizedBox(height: 16),
               
-              TextFormField(
-                controller: _puertoOrigenController,
-                decoration: _inputDecoration('Puerto Específico (opcional)', Icons.anchor),
+              // MÓDULO 2: Dropdown Puerto Origen (Fijo)
+              DropdownButtonFormField<String>(
+                value: _puertoOrigen,
+                decoration: _inputDecoration('Puerto Específico *', Icons.anchor),
+                items: const [
+                  DropdownMenuItem(value: 'San Antonio', child: Text('San Antonio')),
+                  DropdownMenuItem(value: 'Valparaíso', child: Text('Valparaíso')),
+                ],
+                onChanged: (value) => setState(() => _puertoOrigen = value!),
               ),
               const SizedBox(height: 16),
               
@@ -314,6 +435,118 @@ class _PublicarFletePageState extends State<PublicarFletePage> {
                 maxLines: 2,
               ),
               
+              // MÓDULO 2: Checkbox Perímetro
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(
+                  color: _isFueraDePerimetro 
+                      ? Colors.blue.shade50 
+                      : Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _isFueraDePerimetro 
+                        ? Colors.blue.shade300 
+                        : Colors.grey.shade300,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    CheckboxListTile(
+                      title: const Text(
+                        '¿Dirección fuera del perímetro urbano?',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: const Text(
+                        'Marcar si el destino está fuera de la ciudad',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      value: _isFueraDePerimetro,
+                      onChanged: (value) {
+                        setState(() => _isFueraDePerimetro = value ?? false);
+                      },
+                      activeColor: Colors.blue.shade700,
+                    ),
+                    if (_isFueraDePerimetro) ...[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: TextFormField(
+                          controller: _valorPerimetroController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'Valor Adicional por Perímetro',
+                            prefixText: '\$ ',
+                            prefixIcon: const Icon(Icons.add_circle_outline),
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            helperText: 'Costo adicional por entrega fuera de perímetro',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 24),
+              
+              // MÓDULO 2: SECCIÓN DATOS DE INGRESO A PUERTOS
+              _buildSectionHeader(context, 'Datos de Ingreso a Puertos', Icons.security),
+              const SizedBox(height: 8),
+              Text(
+                'RUTs requeridos para el ingreso del camión a los puertos',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey.shade600,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              TextFormField(
+                controller: _rutIngresoStiController,
+                decoration: _inputDecoration('RUT Ingreso STI (opcional)', Icons.badge_outlined).copyWith(
+                  helperText: 'RUT para ingreso a STI (San Antonio Terminal Internacional)',
+                ),
+                keyboardType: TextInputType.text,
+                textCapitalization: TextCapitalization.characters,
+              ),
+              const SizedBox(height: 16),
+              
+              TextFormField(
+                controller: _rutIngresoPcController,
+                decoration: _inputDecoration('RUT Ingreso PC (opcional)', Icons.badge_outlined).copyWith(
+                  helperText: 'RUT para ingreso a Puerto de Contenedores',
+                ),
+                keyboardType: TextInputType.text,
+                textCapitalization: TextCapitalization.characters,
+              ),
+              
+              const SizedBox(height: 24),
+              
+              // MÓDULO 2: SECCIÓN INFORMACIÓN DE RAMPLA
+              _buildSectionHeader(context, 'Información de Rampla y Requisitos', Icons.local_shipping),
+              const SizedBox(height: 16),
+              
+              TextFormField(
+                controller: _tipoRamplaController,
+                decoration: _inputDecoration('Tipo de Rampla (opcional)', Icons.rv_hookup_outlined).copyWith(
+                  helperText: 'Ej: Plataforma, Cama baja, Especial',
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              TextFormField(
+                controller: _requisitosEspecialesController,
+                decoration: _inputDecoration('Requisitos Especiales', Icons.warning_amber).copyWith(
+                  helperText: 'Ej: Manipulación especial, temperatura, documentación extra',
+                  helperMaxLines: 2,
+                ),
+                maxLines: 3,
+              ),
+              
               const SizedBox(height: 24),
               
               // ========== SECCIÓN 5: INFORMACIÓN ADICIONAL ==========
@@ -327,16 +560,6 @@ class _PublicarFletePageState extends State<PublicarFletePage> {
                   helperMaxLines: 2,
                 ),
                 maxLines: 2,
-              ),
-              const SizedBox(height: 16),
-              
-              TextFormField(
-                controller: _requisitosEspecialesController,
-                decoration: _inputDecoration('Requisitos Especiales', Icons.warning_amber).copyWith(
-                  helperText: 'Ej: Manipulación especial, temperatura, documentación extra',
-                  helperMaxLines: 2,
-                ),
-                maxLines: 3,
               ),
               const SizedBox(height: 16),
               

@@ -7,36 +7,44 @@ class Flete {
   // Detalles del contenedor
   final String tipoContenedor;  // "CTN Std 20", "CTN Std 40", "HC", "OT", "reefer"
   final String numeroContenedor;
-  final double? pesoCargaNeta;  // kg - NUEVO
-  final double? pesoTara;       // kg - NUEVO
+  final double? pesoCargaNeta;  // kg
+  final double? pesoTara;       // kg
   final double peso;            // kg - Total (mantener para compatibilidad)
   
   // Ruta y logística
   final String origen;
-  final String? puertoOrigen;   // NUEVO
+  final String? puertoOrigen;
   final String destino;
-  final String? direccionDestino;  // NUEVO - Dirección completa
-  final double? destinoLat;     // NUEVO - Coordenadas para mapa
-  final double? destinoLng;     // NUEVO
+  final String? direccionDestino;
+  final double? destinoLat;
+  final double? destinoLng;
   
   // Fechas y horarios
   final DateTime fechaPublicacion;
-  final DateTime? fechaHoraCarga;  // NUEVO - Fecha/hora de carga
+  final DateTime? fechaHoraCarga;
   
   // Información adicional
-  final String? devolucionCtnVacio;     // NUEVO - Dirección/instrucciones
-  final String? requisitosEspeciales;   // NUEVO
-  final String? serviciosAdicionales;   // NUEVO
+  final String? devolucionCtnVacio;
+  final String? requisitosEspeciales;
+  final String? serviciosAdicionales;
+  
+  // MÓDULO 2: Campos nuevos
+  final bool isFueraDePerimetro;           // Checkbox perímetro
+  final double? valorAdicionalPerimetro;    // Valor si está fuera
+  final double? valorAdicionalSobrepeso;    // Valor si excede 25 ton
+  final String? rutIngresoSti;              // RUT ingreso STI
+  final String? rutIngresoPc;               // RUT ingreso PC
+  final String? tipoDeRampla;               // Tipo de rampla
   
   // Tarifa
   final double tarifa;
   
   // Estado y asignación
   final String estado;
-  final String? transportistaId;        // ID del transportista que aceptó
-  final String? transportistaAsignado;  // LEGACY: mantener para compatibilidad
-  final String? choferAsignado;         // ID del chofer asignado
-  final String? camionAsignado;         // ID del camión asignado
+  final String? transportistaId;
+  final String? transportistaAsignado;  // LEGACY
+  final String? choferAsignado;
+  final String? camionAsignado;
   final DateTime? fechaAsignacion;
   
   // Metadata
@@ -62,6 +70,13 @@ class Flete {
     this.devolucionCtnVacio,
     this.requisitosEspeciales,
     this.serviciosAdicionales,
+    // MÓDULO 2
+    this.isFueraDePerimetro = false,
+    this.valorAdicionalPerimetro,
+    this.valorAdicionalSobrepeso,
+    this.rutIngresoSti,
+    this.rutIngresoPc,
+    this.tipoDeRampla,
     required this.tarifa,
     required this.estado,
     this.transportistaId,
@@ -101,6 +116,17 @@ class Flete {
       devolucionCtnVacio: json['devolucion_ctn_vacio'] as String?,
       requisitosEspeciales: json['requisitos_especiales'] as String?,
       serviciosAdicionales: json['servicios_adicionales'] as String?,
+      // MÓDULO 2
+      isFueraDePerimetro: json['is_fuera_de_perimetro'] as bool? ?? false,
+      valorAdicionalPerimetro: json['valor_adicional_perimetro'] != null 
+          ? (json['valor_adicional_perimetro'] as num).toDouble() 
+          : null,
+      valorAdicionalSobrepeso: json['valor_adicional_sobrepeso'] != null 
+          ? (json['valor_adicional_sobrepeso'] as num).toDouble() 
+          : null,
+      rutIngresoSti: json['rut_ingreso_sti'] as String?,
+      rutIngresoPc: json['rut_ingreso_pc'] as String?,
+      tipoDeRampla: json['tipo_de_rampla'] as String?,
       tarifa: (json['tarifa'] as num).toDouble(),
       estado: json['estado'] as String,
       transportistaId: json['transportista_id'] as String?,
@@ -128,6 +154,8 @@ class Flete {
       'fecha_publicacion': Timestamp.fromDate(fechaPublicacion),
       'created_at': Timestamp.fromDate(createdAt),
       'updated_at': Timestamp.fromDate(updatedAt),
+      // MÓDULO 2
+      'is_fuera_de_perimetro': isFueraDePerimetro,
     };
     
     // Campos opcionales
@@ -142,6 +170,12 @@ class Flete {
     if (devolucionCtnVacio != null) json['devolucion_ctn_vacio'] = devolucionCtnVacio;
     if (requisitosEspeciales != null) json['requisitos_especiales'] = requisitosEspeciales;
     if (serviciosAdicionales != null) json['servicios_adicionales'] = serviciosAdicionales;
+    // MÓDULO 2
+    if (valorAdicionalPerimetro != null) json['valor_adicional_perimetro'] = valorAdicionalPerimetro;
+    if (valorAdicionalSobrepeso != null) json['valor_adicional_sobrepeso'] = valorAdicionalSobrepeso;
+    if (rutIngresoSti != null) json['rut_ingreso_sti'] = rutIngresoSti;
+    if (rutIngresoPc != null) json['rut_ingreso_pc'] = rutIngresoPc;
+    if (tipoDeRampla != null) json['tipo_de_rampla'] = tipoDeRampla;
     if (transportistaId != null) json['transportista_id'] = transportistaId;
     if (transportistaAsignado != null) json['transportista_asignado'] = transportistaAsignado;
     if (choferAsignado != null) json['chofer_asignado'] = choferAsignado;
