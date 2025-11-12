@@ -9,6 +9,7 @@ class Transportista {
   final String codigoInvitacion;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final double? tarifaMinima; // NUEVO - Tarifa mínima aceptable
 
   Transportista({
     required this.uid,
@@ -19,6 +20,7 @@ class Transportista {
     required this.codigoInvitacion,
     required this.createdAt,
     required this.updatedAt,
+    this.tarifaMinima,
   });
 
   factory Transportista.fromJson(Map<String, dynamic> json) => Transportista(
@@ -30,6 +32,9 @@ class Transportista {
     codigoInvitacion: json['codigo_invitacion'] as String,
     createdAt: (json['created_at'] as Timestamp).toDate(),
     updatedAt: (json['updated_at'] as Timestamp).toDate(),
+    tarifaMinima: json['tarifa_minima'] != null 
+        ? (json['tarifa_minima'] as num).toDouble() 
+        : null,
   );
 
   Map<String, dynamic> toJson() => {
@@ -41,6 +46,7 @@ class Transportista {
     'codigo_invitacion': codigoInvitacion,
     'created_at': Timestamp.fromDate(createdAt),
     'updated_at': Timestamp.fromDate(updatedAt),
+    if (tarifaMinima != null) 'tarifa_minima': tarifaMinima,
   };
 
   Transportista copyWith({
@@ -52,6 +58,7 @@ class Transportista {
     String? codigoInvitacion,
     DateTime? createdAt,
     DateTime? updatedAt,
+    double? tarifaMinima,
   }) => Transportista(
     uid: uid ?? this.uid,
     email: email ?? this.email,
@@ -61,5 +68,6 @@ class Transportista {
     codigoInvitacion: codigoInvitacion ?? this.codigoInvitacion,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    tarifaMinima: tarifaMinima ?? this.tarifaMinima,
   );
 }

@@ -1,0 +1,357 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:cargoclick/models/flete.dart';
+import 'package:cargoclick/widgets/progress_timeline.dart';
+import 'package:cargoclick/widgets/instrucciones_card.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+/// Widget optimizado para choferes - Card de recorrido actual
+class RecorridoChoferCard extends StatelessWidget {
+  final Flete flete;
+  final VoidCallback? onVerDetalles;
+
+  const RecorridoChoferCard({
+    Key? key,
+    required this.flete,
+    this.onVerDetalles,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header destacado
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  _getColorPorEstado(flete.estado),
+                  _getColorPorEstado(flete.estado).withOpacity(0.8),
+                ],
+              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.local_shipping, color: Colors.white, size: 32),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '🚛 TU FLETE ACTUAL',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'CTN ${flete.numeroContenedor}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '${flete.tipoContenedor} - ${NumberFormat('#,###', 'es_CL').format(flete.peso)} kg',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Timeline de estados
+                ProgressTimeline(
+                  estados: ['asignado', 'en_proceso', 'completado'],
+                  estadoActual: flete.estado,
+                  size: 28,
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Destino destacado
+                _buildSeccionDestacada(
+                  context,
+                  icon: Icons.location_on,
+                  titulo: '📍 DESTINO',
+                  contenido: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        flete.destino,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (flete.direccionDestino != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          flete.direccionDestino!,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.grey[700],
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Contacto del cliente
+                FutureBuilder<DocumentSnapshot>(
+                  future: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(flete.clienteId)
+                      .get(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const SizedBox(
+                        height: 60,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    final clienteData = snapshot.data!.data() as Map<String, dynamic>?;
+                    if (clienteData == null) return const SizedBox.shrink();
+
+                    final nombre = clienteData['display_name'] ?? 'Cliente';
+                    final empresa = clienteData['empresa'] ?? '';
+                    final telefono = clienteData['phone_number'] ?? '';
+
+                    return _buildSeccionDestacada(
+                      context,
+                      icon: Icons.person,
+                      titulo: '📞 CONTACTO CLIENTE',
+                      contenido: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            nombre,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (empresa.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              empresa,
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                          if (telefono.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: () => _llamar(telefono),
+                                icon: const Icon(Icons.phone, size: 24),
+                                label: Text(
+                                  telefono,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Instrucciones importantes
+                if (flete.requisitosEspeciales != null ||
+                    flete.serviciosAdicionales != null ||
+                    flete.fechaHoraCarga != null) ...[
+                  InstruccionesCard(
+                    instrucciones: [
+                      if (flete.fechaHoraCarga != null)
+                        'Cargue: ${DateFormat('dd/MM/yyyy HH:mm').format(flete.fechaHoraCarga!)}',
+                      if (flete.requisitosEspeciales != null)
+                        flete.requisitosEspeciales!,
+                      if (flete.serviciosAdicionales != null)
+                        'Servicios: ${flete.serviciosAdicionales!}',
+                      if (flete.devolucionCtnVacio != null)
+                        'Devolución: ${flete.devolucionCtnVacio!}',
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                ],
+                
+                // Botones de acción
+                Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: onVerDetalles,
+                        icon: const Icon(Icons.info_outline, size: 24),
+                        label: const Text(
+                          'Ver Instrucciones Completas',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (flete.direccionDestino != null)
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _abrirMapa(flete.direccionDestino!),
+                          icon: const Icon(Icons.map, size: 24),
+                          label: const Text(
+                            'Abrir en Google Maps',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            side: BorderSide(
+                              color: Theme.of(context).colorScheme.primary,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSeccionDestacada(
+    BuildContext context, {
+    required IconData icon,
+    required String titulo,
+    required Widget contenido,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.shade200, width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: Colors.blue.shade700, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                titulo,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue.shade700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          contenido,
+        ],
+      ),
+    );
+  }
+
+  Color _getColorPorEstado(String estado) {
+    switch (estado) {
+      case 'asignado':
+        return Colors.blue.shade600;
+      case 'en_proceso':
+        return Colors.orange.shade600;
+      case 'completado':
+        return Colors.green.shade600;
+      default:
+        return Colors.grey.shade600;
+    }
+  }
+
+  Future<void> _llamar(String telefono) async {
+    final uri = Uri.parse('tel:$telefono');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  Future<void> _abrirMapa(String direccion) async {
+    final url = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(direccion)}',
+    );
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
+  }
+}

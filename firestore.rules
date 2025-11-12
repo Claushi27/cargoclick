@@ -184,6 +184,19 @@ service cloud.firestore {
       allow read: if isAuthenticated();
     }
 
+    // Ratings collection
+    match /ratings/{ratingId} {
+      // Lectura: cualquier autenticado puede leer ratings
+      allow read: if isAuthenticated();
+      
+      // Creación: solo el cliente que es dueño del flete puede crear rating
+      allow create: if isAuthenticated() 
+        && request.resource.data.cliente_id == request.auth.uid;
+      
+      // No se permite actualizar o eliminar ratings
+      allow update, delete: if false;
+    }
+
     // Catch-all: denegar todo lo demás
     match /{document=**} {
       allow read, write: if false;

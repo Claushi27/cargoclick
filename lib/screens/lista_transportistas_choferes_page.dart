@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cargoclick/models/usuario.dart';
 import 'package:cargoclick/models/transportista.dart';
+import 'package:cargoclick/services/rating_service.dart';
+import 'package:cargoclick/services/estadisticas_service.dart';
+import 'package:cargoclick/widgets/rating_display.dart';
+import 'package:cargoclick/screens/perfil_transportista_publico_page.dart';
+import 'package:cargoclick/screens/perfil_chofer_publico_page.dart';
 
 class ListaTransportistasChoferesPage extends StatelessWidget {
   const ListaTransportistasChoferesPage({super.key});
@@ -104,66 +109,111 @@ class _ListaTransportistas extends StatelessWidget {
 
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                contentPadding: const EdgeInsets.all(16),
-                leading: Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.business,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                title: Text(
-                  transportista.razonSocial,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.badge, size: 14, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text('RUT: ${transportista.rutEmpresa}'),
-                      ],
+              child: InkWell(
+                onTap: () {
+                  // Navegar al perfil público del transportista
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PerfilTransportistaPublicoPage(
+                        transportista: transportista,
+                      ),
                     ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Icon(Icons.phone, size: 14, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(transportista.telefono),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Icon(Icons.email, size: 14, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(transportista.email),
-                      ],
-                    ),
-                  ],
-                ),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                  ),
-                  child: Text(
-                    transportista.codigoInvitacion,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'monospace',
-                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      // Avatar
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.business,
+                          color: Theme.of(context).colorScheme.primary,
+                          size: 30,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      
+                      // Información
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              transportista.razonSocial,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            
+                            // Rating
+                            FutureBuilder<double>(
+                              future: RatingService().getRatingPromedio(transportista.uid),
+                              builder: (context, ratingSnapshot) {
+                                if (ratingSnapshot.connectionState == ConnectionState.waiting) {
+                                  return const SizedBox(
+                                    height: 20,
+                                    width: 120,
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 12,
+                                        height: 12,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      ),
+                                    ),
+                                  );
+                                }
+                                final rating = ratingSnapshot.data ?? 0.0;
+                                
+                                return FutureBuilder<Map<String, dynamic>>(
+                                  future: RatingService().getEstadisticasRatings(transportista.uid),
+                                  builder: (context, statsSnapshot) {
+                                    final total = statsSnapshot.hasData 
+                                        ? statsSnapshot.data!['total'] as int 
+                                        : 0;
+                                    
+                                    return RatingDisplay(
+                                      rating: rating,
+                                      totalRatings: total,
+                                      size: 16,
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 4),
+                            
+                            // Info adicional
+                            Row(
+                              children: [
+                                Icon(Icons.phone, size: 14, color: Colors.grey[600]),
+                                const SizedBox(width: 4),
+                                Text(
+                                  transportista.telefono,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      // Indicador de tap
+                      Icon(Icons.chevron_right, color: Colors.grey[400]),
+                    ],
                   ),
                 ),
               ),
@@ -255,73 +305,107 @@ class _ListaChoferes extends StatelessWidget {
 
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                contentPadding: const EdgeInsets.all(16),
-                leading: CircleAvatar(
-                  radius: 25,
-                  backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                  child: Icon(
-                    Icons.person,
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
-                ),
-                title: Text(
-                  chofer.displayName,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.business, size: 14, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(chofer.empresa.isNotEmpty ? chofer.empresa : 'Sin empresa'),
-                      ],
+              child: InkWell(
+                onTap: () {
+                  // Navegar al perfil público del chofer
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PerfilChoferPublicoPage(
+                        choferId: chofer.uid,
+                        nombre: chofer.displayName,
+                      ),
                     ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Icon(Icons.phone, size: 14, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(chofer.phoneNumber.isNotEmpty ? chofer.phoneNumber : 'Sin teléfono'),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Icon(Icons.email, size: 14, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(chofer.email),
-                      ],
-                    ),
-                    if (chofer.transportistaId != null) ...[
-                      const SizedBox(height: 4),
+                  );
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      // Avatar
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        width: 60,
+                        height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6),
+                          color: Theme.of(context).colorScheme.secondaryContainer,
+                          borderRadius: BorderRadius.circular(30),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                        child: Icon(
+                          Icons.person,
+                          color: Theme.of(context).colorScheme.secondary,
+                          size: 30,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      
+                      // Información
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.link, size: 12, color: Colors.green[700]),
-                            const SizedBox(width: 4),
                             Text(
-                              'Vinculado a transportista',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.green[700],
-                                fontWeight: FontWeight.w600,
+                              chofer.displayName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
                               ),
                             ),
+                            const SizedBox(height: 4),
+                            
+                            if (chofer.empresa.isNotEmpty)
+                              Row(
+                                children: [
+                                  Icon(Icons.business, size: 14, color: Colors.grey[600]),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      chofer.empresa,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey[600],
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            
+                            if (chofer.transportistaId != null) ...[
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.check_circle, size: 12, color: Colors.green[700]),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Activo',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.green[700],
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
+                      
+                      // Indicador de tap
+                      Icon(Icons.chevron_right, color: Colors.grey[400]),
                     ],
-                  ],
+                  ),
                 ),
               ),
             );

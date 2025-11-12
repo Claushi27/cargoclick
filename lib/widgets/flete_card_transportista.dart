@@ -6,12 +6,14 @@ class FleteCardTransportista extends StatelessWidget {
   final Flete flete;
   final VoidCallback onTap;
   final VoidCallback onAceptar;
+  final double? tarifaMinimaTransportista; // NUEVO
 
   const FleteCardTransportista({
     super.key,
     required this.flete,
     required this.onTap,
     required this.onAceptar,
+    this.tarifaMinimaTransportista,
   });
 
   @override
@@ -83,6 +85,46 @@ class FleteCardTransportista extends StatelessWidget {
                           color: Colors.grey[600],
                         ),
                       ),
+                      // Badge de compatibilidad con tarifa
+                      if (tarifaMinimaTransportista != null) ...[
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: flete.tarifa >= tarifaMinimaTransportista!
+                                ? Colors.green.withOpacity(0.2)
+                                : Colors.orange.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                flete.tarifa >= tarifaMinimaTransportista!
+                                    ? Icons.check_circle
+                                    : Icons.warning,
+                                size: 12,
+                                color: flete.tarifa >= tarifaMinimaTransportista!
+                                    ? Colors.green[700]
+                                    : Colors.orange[700],
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                flete.tarifa >= tarifaMinimaTransportista!
+                                    ? 'Compatible'
+                                    : 'Bajo mínimo',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: flete.tarifa >= tarifaMinimaTransportista!
+                                      ? Colors.green[700]
+                                      : Colors.orange[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ],

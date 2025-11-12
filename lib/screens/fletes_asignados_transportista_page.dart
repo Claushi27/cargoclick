@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:cargoclick/services/flete_service.dart';
 import 'package:cargoclick/services/auth_service.dart';
+import 'package:cargoclick/services/rating_service.dart';
 import 'package:cargoclick/models/flete.dart';
 import 'package:cargoclick/widgets/flete_card_transportista.dart';
+import 'package:cargoclick/widgets/progress_timeline.dart';
+import 'package:cargoclick/widgets/contact_card.dart';
+import 'package:cargoclick/widgets/instrucciones_card.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class FletesAsignadosTransportistaPage extends StatefulWidget {
   const FletesAsignadosTransportistaPage({super.key});
@@ -16,6 +21,7 @@ class FletesAsignadosTransportistaPage extends StatefulWidget {
 class _FletesAsignadosTransportistaPageState extends State<FletesAsignadosTransportistaPage> {
   final _fleteService = FleteService();
   final _authService = AuthService();
+  final _ratingService = RatingService();
   String? _transportistaId;
 
   @override
@@ -121,7 +127,7 @@ class _FletesAsignadosTransportistaPageState extends State<FletesAsignadosTransp
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
+              // Header con estado
               Row(
                 children: [
                   Container(
@@ -147,7 +153,7 @@ class _FletesAsignadosTransportistaPageState extends State<FletesAsignadosTransp
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 4),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
@@ -185,6 +191,14 @@ class _FletesAsignadosTransportistaPageState extends State<FletesAsignadosTransp
                     ],
                   ),
                 ],
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Línea de tiempo de estados
+              ProgressTimeline(
+                estados: ['asignado', 'en_proceso', 'completado'],
+                estadoActual: flete.estado,
               ),
               
               const SizedBox(height: 16),
@@ -231,6 +245,68 @@ class _FletesAsignadosTransportistaPageState extends State<FletesAsignadosTransp
               
               const SizedBox(height: 12),
               
+              // Info del cliente con rating
+              FutureBuilder<Map<String, dynamic>>(
+                future: _ratingService.getInfoCliente(flete.clienteId),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      child: const Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (!snapshot.hasData) return const SizedBox.shrink();
+
+                  final clienteInfo = snapshot.data!;
+                  final totalFletes = clienteInfo['totalFletes'] as int;
+
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.person, color: Colors.grey[700], size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                clienteInfo['nombre'],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              Text(
+                                '$totalFletes flete${totalFletes != 1 ? 's' : ''} publicado${totalFletes != 1 ? 's' : ''}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              
+              const SizedBox(height: 12),
+              
               // Info chips
               Wrap(
                 spacing: 8,
@@ -246,6 +322,12 @@ class _FletesAsignadosTransportistaPageState extends State<FletesAsignadosTransp
                       icon: Icons.assignment,
                       label: 'Asignado ${_formatearFechaRelativa(flete.fechaAsignacion!)}',
                       color: Colors.purple,
+                    ),
+                  if (flete.fechaHoraCarga != null)
+                    _buildInfoChip(
+                      icon: Icons.schedule,
+                      label: 'Cargue: ${DateFormat('dd/MM HH:mm').format(flete.fechaHoraCarga!)}',
+                      color: Colors.blue,
                     ),
                 ],
               ),
@@ -355,7 +437,7 @@ class _FletesAsignadosTransportistaPageState extends State<FletesAsignadosTransp
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
+        initialChildSize: 0.8,
         minChildSize: 0.5,
         maxChildSize: 0.95,
         builder: (_, controller) => Container(
@@ -382,52 +464,122 @@ class _FletesAsignadosTransportistaPageState extends State<FletesAsignadosTransp
                   controller: controller,
                   padding: const EdgeInsets.all(24),
                   children: [
+                    // Header con timeline
                     Text(
                       'CTN ${flete.numeroContenedor}',
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: _getColorPorEstado(flete.estado).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _getTextoEstado(flete.estado),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: _getColorPorEstado(flete.estado),
-                        ),
-                      ),
+                    const SizedBox(height: 16),
+                    
+                    // Línea de tiempo
+                    ProgressTimeline(
+                      estados: ['asignado', 'en_proceso', 'completado'],
+                      estadoActual: flete.estado,
+                      size: 28,
                     ),
+                    
                     const SizedBox(height: 24),
                     const Divider(),
                     const SizedBox(height: 16),
                     
-                    // Detalles completos del flete
-                    _buildSeccion('Información General', [
+                    // Información del Cliente
+                    FutureBuilder<Map<String, dynamic>>(
+                      future: _ratingService.getInfoCliente(flete.clienteId),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        
+                        if (!snapshot.hasData) {
+                          return const SizedBox.shrink();
+                        }
+                        
+                        final clienteInfo = snapshot.data!;
+                        
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'INFORMACIÓN DEL CLIENTE',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ContactCard(
+                              nombre: clienteInfo['nombre'],
+                              empresa: clienteInfo['empresa'],
+                              telefono: clienteInfo['telefono'],
+                              email: clienteInfo['email'],
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Detalles del flete
+                    _buildSeccion('DETALLES DEL FLETE', [
                       _buildDetalle('Tipo Contenedor', flete.tipoContenedor),
+                      _buildDetalle('Número Contenedor', flete.numeroContenedor),
                       _buildDetalle('Peso Total', '${NumberFormat('#,###', 'es_CL').format(flete.peso)} kg'),
-                      _buildDetalle('Tarifa', '\$${NumberFormat('#,###', 'es_CL').format(flete.tarifa)}'),
+                      _buildDetalle('Tarifa', '\$${NumberFormat('#,###', 'es_CL').format(flete.tarifa)} CLP'),
                     ]),
                     
                     const SizedBox(height: 16),
                     
-                    _buildSeccion('Ruta', [
+                    // Ruta
+                    _buildSeccion('RUTA', [
                       _buildDetalle('Origen', flete.origen),
                       if (flete.puertoOrigen != null)
                         _buildDetalle('Puerto Origen', flete.puertoOrigen!),
                       _buildDetalle('Destino', flete.destino),
                       if (flete.direccionDestino != null)
                         _buildDetalle('Dirección Destino', flete.direccionDestino!),
+                      if (flete.fechaHoraCarga != null)
+                        _buildDetalle(
+                          'Fecha/Hora Cargue',
+                          DateFormat('dd/MM/yyyy HH:mm').format(flete.fechaHoraCarga!),
+                        ),
                     ]),
                     
                     const SizedBox(height: 16),
                     
-                    _buildSeccion('Estado de Asignación', [
+                    // Instrucciones especiales
+                    if (flete.requisitosEspeciales != null || 
+                        flete.serviciosAdicionales != null ||
+                        flete.devolucionCtnVacio != null) ...[
+                      Text(
+                        'INSTRUCCIONES IMPORTANTES',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      InstruccionesCard(
+                        instrucciones: [
+                          if (flete.requisitosEspeciales != null)
+                            flete.requisitosEspeciales!,
+                          if (flete.serviciosAdicionales != null)
+                            'Servicios: ${flete.serviciosAdicionales!}',
+                          if (flete.devolucionCtnVacio != null)
+                            'Devolución: ${flete.devolucionCtnVacio!}',
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    
+                    // Asignación actual
+                    _buildSeccion('ASIGNACIÓN ACTUAL', [
                       if (flete.choferAsignado != null)
                         FutureBuilder<DocumentSnapshot>(
                           future: FirebaseFirestore.instance
@@ -463,6 +615,26 @@ class _FletesAsignadosTransportistaPageState extends State<FletesAsignadosTransp
                         _buildDetalle('Fecha Asignación', 
                           DateFormat('dd/MM/yyyy HH:mm').format(flete.fechaAsignacion!)),
                     ]),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Botones de acción
+                    if (flete.direccionDestino != null) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _abrirMapa(flete.direccionDestino!),
+                          icon: const Icon(Icons.map),
+                          label: const Text('Abrir en Google Maps'),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                   ],
                 ),
               ),
@@ -491,6 +663,15 @@ class _FletesAsignadosTransportistaPageState extends State<FletesAsignadosTransp
         ),
       ),
     );
+  }
+
+  Future<void> _abrirMapa(String direccion) async {
+    final url = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(direccion)}',
+    );
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
   }
 
   Widget _buildSeccion(String titulo, List<Widget> items) {

@@ -280,4 +280,19 @@ class AuthService {
     
     return Transportista.fromJson(doc.data()!);
   }
+
+  /// Actualiza la tarifa mínima del transportista
+  Future<void> actualizarTarifaMinima(String transportistaId, double? tarifaMinima) async {
+    if (!_isBackendReady) {
+      throw StateError('Firebase no está configurado.');
+    }
+
+    await FirebaseFirestore.instance
+        .collection('transportistas')
+        .doc(transportistaId)
+        .update({
+          'tarifa_minima': tarifaMinima,
+          'updated_at': Timestamp.now(),
+        });
+  }
 }

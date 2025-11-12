@@ -4,6 +4,10 @@ import 'package:cargoclick/models/checkpoint.dart';
 import 'package:cargoclick/models/usuario.dart';
 import 'package:cargoclick/models/camion.dart';
 import 'package:cargoclick/services/checkpoint_service.dart';
+import 'package:cargoclick/services/rating_service.dart';
+import 'package:cargoclick/widgets/rating_dialog.dart';
+import 'package:cargoclick/widgets/rating_display.dart';
+import 'package:cargoclick/widgets/desglose_costos_card.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
@@ -22,6 +26,9 @@ class FletesClienteDetallePage extends StatefulWidget {
 
 class _FletesClienteDetallePageState extends State<FletesClienteDetallePage> {
   final _checkpointService = CheckpointService();
+  final _ratingService = RatingService();
+  bool _yaCalificado = false;
+  bool _cargandoRating = true;
 
   Future<void> _abrirLink(String url) async {
     final uri = Uri.parse(url);
@@ -72,6 +79,93 @@ class _FletesClienteDetallePageState extends State<FletesClienteDetallePage> {
       default:
         return 'Desconocido';
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _verificarRating();
+  }
+
+  Future<void> _verificarRating() async {
+    if (widget.flete.id != null) {
+      final existe = await _ratingService.existeRating(widget.flete.id!);
+      setState(() {
+        _yaCalificado = existe;
+        _cargandoRating = false;
+      });
+    } else {
+      setState(() => _cargandoRating = false);
+    }
+  }
+
+  void _mostrarDialogRating() {
+    if (widget.flete.transportistaId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No hay transportista asignado para calificar'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => RatingDialog(
+        fleteId: widget.flete.id!,
+        clienteId: widget.flete.clienteId,
+        transportistaId: widget.flete.transportistaId!,
+        onRatingSubmitted: () {
+          setState(() => _yaCalificado = true);
+        },
+      ),
+    );
+  }
+
+  Map<String, double>? _calcularCostosAdicionales() {
+    final costos = <String, double>{};
+    
+    // Costos por servicios adicionales mencionados
+    if (widget.flete.serviciosAdicionales != null && 
+        widget.flete.serviciosAdicionales!.isNotEmpty) {
+      final servicios = widget.flete.serviciosAdicionales!.toLowerCase();
+      
+      if (servicios.contains('seguro')) {
+        costos['Seguro de carga'] = 15000;
+      }
+      if (servicios.contains('escolta')) {
+        costos['Servicio de escolta'] = 50000;
+      }
+      if (servicios.contains('temperatura') || servicios.contains('refrigerado')) {
+        costos['Control de temperatura'] = 30000;
+      }
+      if (servicios.contains('certificado')) {
+        costos['Certificado digital'] = 5000;
+      }
+    }
+    
+    // Costos por requisitos especiales
+    if (widget.flete.requisitosEspeciales != null && 
+        widget.flete.requisitosEspeciales!.isNotEmpty) {
+      final requisitos = widget.flete.requisitosEspeciales!.toLowerCase();
+      
+      if (requisitos.contains('rampa') || requisitos.contains('montacargas')) {
+        costos['Equipo de descarga'] = 25000;
+      }
+      if (requisitos.contains('personal')) {
+        costos['Personal adicional'] = 20000;
+      }
+    }
+    
+    // Si es contenedor refrigerado (reefer)
+    if (widget.flete.tipoContenedor.toLowerCase().contains('reefer')) {
+      if (!costos.containsKey('Control de temperatura')) {
+        costos['Control de temperatura'] = 30000;
+      }
+    }
+    
+    return costos.isEmpty ? null : costos;
   }
 
   @override
@@ -145,6 +239,15 @@ class _FletesClienteDetallePageState extends State<FletesClienteDetallePage> {
                     ),
                   ),
                 ],
+              ),
+            ),
+
+            // Desglose de Costos
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: DesgloseCostosCard(
+                tarifaBase: widget.flete.tarifa,
+                costosAdicionales: _calcularCostosAdicionales(),
               ),
             ),
 
@@ -609,6 +712,53 @@ class _FletesClienteDetallePageState extends State<FletesClienteDetallePage> {
                 );
               },
             ),
+
+            const SizedBox(height: 20),
+
+            // Botón de calificar (solo si está completado)
+            if (widget.flete.estado == 'completado' && !_cargandoRating)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: _yaCalificado
+                    ? Card(
+                        color: Colors.green[50],
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: const [
+                              Icon(Icons.check_circle, color: Colors.green),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  '¡Gracias por calificar este servicio!',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _mostrarDialogRating,
+                          icon: const Icon(Icons.star),
+                          label: const Text('Calificar Servicio'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber,
+                            foregroundColor: Colors.black87,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            textStyle: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
 
             const SizedBox(height: 20),
           ],

@@ -17,6 +17,7 @@ class _FletesDisponiblesTransportistaPageState extends State<FletesDisponiblesTr
   final _fleteService = FleteService();
   final _authService = AuthService();
   String? _transportistaId;
+  double? _tarifaMinimaTransportista; // Tarifa mínima configurada
   
   // Filtros
   String? _filtroTipoContenedor;
@@ -33,7 +34,14 @@ class _FletesDisponiblesTransportistaPageState extends State<FletesDisponiblesTr
   Future<void> _cargarTransportistaId() async {
     final transportista = await _authService.getCurrentTransportista();
     if (mounted) {
-      setState(() => _transportistaId = transportista?.uid);
+      setState(() {
+        _transportistaId = transportista?.uid;
+        _tarifaMinimaTransportista = transportista?.tarifaMinima;
+        // Si hay tarifa mínima configurada, aplicarla automáticamente
+        if (_tarifaMinimaTransportista != null) {
+          _tarifaMinima = _tarifaMinimaTransportista!;
+        }
+      });
     }
   }
 
@@ -52,6 +60,36 @@ class _FletesDisponiblesTransportistaPageState extends State<FletesDisponiblesTr
       ),
       body: Column(
         children: [
+          // Banner de tarifa mínima aplicada
+          if (_tarifaMinimaTransportista != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              color: Colors.green.withOpacity(0.1),
+              child: Row(
+                children: [
+                  Icon(Icons.filter_alt, color: Colors.green[700], size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Filtro de tarifa mínima activo: \$${NumberFormat('#,###', 'es_CL').format(_tarifaMinimaTransportista)} CLP',
+                      style: TextStyle(
+                        color: Colors.green[700],
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/perfil-transportista');
+                    },
+                    child: const Text('Cambiar', style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+          
           // Panel de filtros
           if (_mostrarFiltros) _buildFiltrosPanel(),
           
@@ -143,6 +181,7 @@ class _FletesDisponiblesTransportistaPageState extends State<FletesDisponiblesTr
                       flete: fletes[index],
                       onTap: () => _mostrarDetallesFlete(fletes[index]),
                       onAceptar: () => _aceptarFlete(fletes[index]),
+                      tarifaMinimaTransportista: _tarifaMinimaTransportista, // NUEVO
                     );
                   },
                 );
