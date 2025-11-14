@@ -98,6 +98,98 @@ class RecorridoChoferCard extends StatelessWidget {
                 
                 const SizedBox(height: 24),
                 
+                // MÓDULO 4: Sección HORARIOS IMPORTANTES
+                if (flete.fechaHoraCarga != null || flete.puertoOrigen != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.amber.shade300, width: 2),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.schedule, color: Colors.amber.shade900, size: 28),
+                            const SizedBox(width: 12),
+                            Text(
+                              '⏰ HORARIOS IMPORTANTES',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.amber.shade900,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        if (flete.fechaHoraCarga != null) ...[
+                          _buildInfoRow(
+                            icon: Icons.access_time,
+                            label: 'Hora de Retiro',
+                            value: DateFormat('HH:mm').format(flete.fechaHoraCarga!) + ' hs',
+                            color: Colors.amber.shade800,
+                          ),
+                          const SizedBox(height: 12),
+                          _buildInfoRow(
+                            icon: Icons.calendar_today,
+                            label: 'Fecha de Carga',
+                            value: DateFormat('EEEE d \'de\' MMMM', 'es_ES').format(flete.fechaHoraCarga!),
+                            color: Colors.amber.shade800,
+                          ),
+                        ],
+                        
+                        if (flete.puertoOrigen != null) ...[
+                          const SizedBox(height: 12),
+                          _buildInfoRow(
+                            icon: Icons.anchor,
+                            label: 'Puerto de Retiro',
+                            value: flete.puertoOrigen!,
+                            color: Colors.amber.shade800,
+                          ),
+                        ],
+                        
+                        // Badge de urgencia si está próximo (<2 horas)
+                        if (flete.fechaHoraCarga != null &&
+                            flete.fechaHoraCarga!.difference(DateTime.now()).inHours < 2 &&
+                            flete.fechaHoraCarga!.isAfter(DateTime.now())) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red.shade400, width: 1.5),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.warning_amber_rounded, color: Colors.red.shade800, size: 20),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '¡URGENTE! Retiro en menos de 2 horas',
+                                    style: TextStyle(
+                                      color: Colors.red.shade900,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 20),
+                ],
+                
                 // Destino destacado
                 _buildSeccionDestacada(
                   context,
@@ -337,6 +429,45 @@ class RecorridoChoferCard extends StatelessWidget {
       default:
         return Colors.grey.shade600;
     }
+  }
+
+  // MÓDULO 4: Helper para mostrar info row en horarios
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _llamar(String telefono) async {

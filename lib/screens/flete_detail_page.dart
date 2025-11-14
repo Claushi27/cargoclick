@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cargoclick/models/flete.dart';
 import 'package:cargoclick/models/checkpoint.dart';
 import 'package:cargoclick/services/checkpoint_service.dart';
+import 'package:cargoclick/screens/detalle_cobro_page.dart'; // MÓDULO 4
 
 class FleteDetailPage extends StatefulWidget {
   final Flete flete;
@@ -395,6 +396,111 @@ class _FleteDetailPageState extends State<FleteDetailPage> {
                 },
               );
             }),
+
+            const SizedBox(height: 16),
+            
+            // MÓDULO 4: Botón de Detalle de Cobro (solo si está completado)
+            if (widget.flete.estado == 'completado') ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  children: [
+                    const Divider(thickness: 2),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.green.shade50,
+                            Colors.green.shade100,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.green.shade300, width: 2),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade600,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.check_circle,
+                                  color: Colors.white,
+                                  size: 32,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '¡FLETE COMPLETADO!',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.green.shade900,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Ver detalle de cobro final',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.green.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => DetalleCobroPage(flete: widget.flete),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.receipt_long, size: 24),
+                              label: const Text(
+                                'VER DETALLE DE COBRO',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green.shade600,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ],
 
             const SizedBox(height: 16),
           ],
