@@ -36,6 +36,11 @@ class Flete {
   final String? rutIngresoPc;               // RUT ingreso PC
   final String? tipoDeRampla;               // Tipo de rampla
   
+  // HOJA DE COBRO: Campos de facturación
+  final double? tarifaBase;                 // Tarifa base del flete
+  final double? valorAdicionalExtra;        // Otros requisitos adicionales
+  final double? valorSobreestadia;          // Valor por sobrestadía
+  
   // Tarifa
   final double tarifa;
   
@@ -77,6 +82,10 @@ class Flete {
     this.rutIngresoSti,
     this.rutIngresoPc,
     this.tipoDeRampla,
+    // HOJA DE COBRO
+    this.tarifaBase,
+    this.valorAdicionalExtra,
+    this.valorSobreestadia,
     required this.tarifa,
     required this.estado,
     this.transportistaId,
@@ -127,6 +136,16 @@ class Flete {
       rutIngresoSti: json['rut_ingreso_sti'] as String?,
       rutIngresoPc: json['rut_ingreso_pc'] as String?,
       tipoDeRampla: json['tipo_de_rampla'] as String?,
+      // HOJA DE COBRO
+      tarifaBase: json['tarifa_base'] != null 
+          ? (json['tarifa_base'] as num).toDouble() 
+          : null,
+      valorAdicionalExtra: json['valor_adicional_extra'] != null 
+          ? (json['valor_adicional_extra'] as num).toDouble() 
+          : null,
+      valorSobreestadia: json['valor_sobreestadia'] != null 
+          ? (json['valor_sobreestadia'] as num).toDouble() 
+          : null,
       tarifa: (json['tarifa'] as num).toDouble(),
       estado: json['estado'] as String,
       transportistaId: json['transportista_id'] as String?,
@@ -176,6 +195,10 @@ class Flete {
     if (rutIngresoSti != null) json['rut_ingreso_sti'] = rutIngresoSti;
     if (rutIngresoPc != null) json['rut_ingreso_pc'] = rutIngresoPc;
     if (tipoDeRampla != null) json['tipo_de_rampla'] = tipoDeRampla;
+    // HOJA DE COBRO
+    if (tarifaBase != null) json['tarifa_base'] = tarifaBase;
+    if (valorAdicionalExtra != null) json['valor_adicional_extra'] = valorAdicionalExtra;
+    if (valorSobreestadia != null) json['valor_sobreestadia'] = valorSobreestadia;
     if (transportistaId != null) json['transportista_id'] = transportistaId;
     if (transportistaAsignado != null) json['transportista_asignado'] = transportistaAsignado;
     if (choferAsignado != null) json['chofer_asignado'] = choferAsignado;

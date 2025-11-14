@@ -8,6 +8,7 @@ import 'package:cargoclick/services/rating_service.dart';
 import 'package:cargoclick/widgets/rating_dialog.dart';
 import 'package:cargoclick/widgets/rating_display.dart';
 import 'package:cargoclick/widgets/desglose_costos_card.dart';
+import 'package:cargoclick/widgets/hoja_cobro_card.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
@@ -242,14 +243,30 @@ class _FletesClienteDetallePageState extends State<FletesClienteDetallePage> {
               ),
             ),
 
-            // Desglose de Costos
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: DesgloseCostosCard(
-                tarifaBase: widget.flete.tarifa,
-                costosAdicionales: _calcularCostosAdicionales(),
+            // Hoja de Detalle de Cobro (solo si está completado)
+            if (widget.flete.estado == 'completado') ...[
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: HojaCobroCard(
+                  tarifaBase: widget.flete.tarifaBase ?? widget.flete.tarifa,
+                  valorAdicionalPerimetro: widget.flete.valorAdicionalPerimetro,
+                  valorAdicionalSobrepeso: widget.flete.valorAdicionalSobrepeso,
+                  valorSobreestadia: widget.flete.valorSobreestadia,
+                  valorAdicionalExtra: widget.flete.valorAdicionalExtra,
+                  requisitosEspeciales: widget.flete.requisitosEspeciales,
+                  total: widget.flete.tarifa,
+                ),
               ),
-            ),
+            ] else ...[
+              // Desglose de Costos (cuando no está completado)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: DesgloseCostosCard(
+                  tarifaBase: widget.flete.tarifa,
+                  costosAdicionales: _calcularCostosAdicionales(),
+                ),
+              ),
+            ],
 
             // Información de Asignación (si está asignado)
             if (widget.flete.choferAsignado != null || widget.flete.camionAsignado != null) ...[

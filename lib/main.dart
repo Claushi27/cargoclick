@@ -98,10 +98,3 @@ class AuthWrapper extends StatelessWidget {
     );
   }
 }
-      theme: lightTheme,
-      darkTheme: darkTheme,
-      themeMode: ThemeMode.light,
-      home: const LoginPage(),
-    );
-  }
-}
