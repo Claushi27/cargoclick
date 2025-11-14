@@ -19,6 +19,11 @@ class LightModeColors {
   static const lightSurface = Color(0xFFFDFBFF);
   static const lightOnSurface = Color(0xFF1A1C1E);
   static const lightAppBarBackground = Color(0xFF1A3A6B);
+  
+  // NUEVO: Color verde validación (unificado para toda la app)
+  static const successGreen = Color(0xFF4CAF50); // Verde Material
+  static const successGreenLight = Color(0xFFE8F5E9); // Fondo verde claro
+  static const successGreenDark = Color(0xFF2E7D32); // Verde oscuro
 }
 
 class DarkModeColors {
@@ -39,6 +44,11 @@ class DarkModeColors {
   static const darkSurface = Color(0xFF1A1C1E);
   static const darkOnSurface = Color(0xFFE3E2E6);
   static const darkAppBarBackground = Color(0xFF1A3A6B);
+  
+  // NUEVO: Color verde validación (modo oscuro)
+  static const successGreen = Color(0xFF66BB6A); // Verde más claro para dark mode
+  static const successGreenLight = Color(0xFF2E7D32); // Fondo verde oscuro
+  static const successGreenDark = Color(0xFF81C784); // Verde aún más claro
 }
 
 class FontSizes {

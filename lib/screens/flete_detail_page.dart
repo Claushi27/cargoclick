@@ -1,10 +1,13 @@
 import 'dart:typed_data';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cargoclick/models/flete.dart';
 import 'package:cargoclick/models/checkpoint.dart';
 import 'package:cargoclick/services/checkpoint_service.dart';
+import 'package:cargoclick/services/permission_service.dart';
 import 'package:cargoclick/screens/detalle_cobro_page.dart'; // MÓDULO 4
+import 'package:intl/intl.dart';
 
 class FleteDetailPage extends StatefulWidget {
   final Flete flete;
@@ -29,7 +32,19 @@ class _FleteDetailPageState extends State<FleteDetailPage> {
     final requiereFotos = checkpointType['requiereFotos'] as int;
     final esUbicacionGPS = tipo == 'ubicacion_gps';
 
-    // Mostrar diálogo para elegir fuente
+    // 1. SOLICITAR PERMISO DE CÁMARA
+    if (!await PermissionService.requestCameraPermission(context)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Se necesita permiso de cámara para tomar fotos'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // 2. Mostrar diálogo para elegir fuente
     final source = await showModalBottomSheet<ImageSource?>(
       context: context,
       showDragHandle: true,
@@ -52,21 +67,23 @@ class _FleteDetailPageState extends State<FleteDetailPage> {
     );
     if (source == null) return;
 
-    // Recolectar fotos
-    final fotos = <Uint8List>[];
+    // 3. Recolectar fotos (ahora guardamos Files en lugar de Uint8List)
+    final fotosFiles = <File>[];
     for (var i = 0; i < requiereFotos; i++) {
       try {
         final picked = await _picker.pickImage(
           source: source,
-          imageQuality: 85,
-          maxWidth: 2400,
+          imageQuality: 85, // Calidad inicial razonable
+          maxWidth: 2400,   // Límite de tamaño inicial
         );
         if (picked == null) {
           if (i == 0) return; // Si cancela la primera, salir
           break; // Si cancela una subsecuente, continuar con las que tiene
         }
-        final bytes = await picked.readAsBytes();
-        fotos.add(bytes);
+        
+        // Guardar como File para usar compresión después
+        final file = File(picked.path);
+        fotosFiles.add(file);
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -76,9 +93,9 @@ class _FleteDetailPageState extends State<FleteDetailPage> {
       }
     }
 
-    if (fotos.isEmpty) return;
+    if (fotosFiles.isEmpty) return;
 
-    // Mostrar preview y confirmar
+    // 4. Mostrar preview y confirmar
     final notaController = TextEditingController();
     final gpsLinkController = TextEditingController();
     
@@ -96,7 +113,7 @@ class _FleteDetailPageState extends State<FleteDetailPage> {
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
               const SizedBox(height: 12),
-              ...fotos.asMap().entries.map((entry) {
+              ...fotosFiles.asMap().entries.map((entry) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
                   child: Column(
@@ -107,7 +124,7 @@ class _FleteDetailPageState extends State<FleteDetailPage> {
                       const SizedBox(height: 4),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.memory(
+                        child: Image.file(
                           entry.value,
                           height: 150,
                           width: double.infinity,
@@ -165,13 +182,35 @@ class _FleteDetailPageState extends State<FleteDetailPage> {
 
     if (confirmed != true) return;
 
-    // Subir checkpoint
+    // 5. Mostrar loading mientras sube
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Comprimiendo y subiendo fotos...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // 6. Subir checkpoint con COMPRESIÓN AUTOMÁTICA
     try {
-      await _checkpointService.subirCheckpoint(
+      await _checkpointService.subirCheckpointOptimizado(
         fleteId: widget.flete.id!,
         choferId: widget.choferId,
         tipo: tipo,
-        fotos: fotos,
+        fotosFiles: fotosFiles, // ← Ahora usa Files y comprime automáticamente
         notas: notaController.text.trim().isEmpty
             ? null
             : notaController.text.trim(),
@@ -182,18 +221,21 @@ class _FleteDetailPageState extends State<FleteDetailPage> {
       );
 
       if (!mounted) return;
+      Navigator.pop(context); // Cerrar loading
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Checkpoint subido exitosamente'),
+          content: Text('✅ Checkpoint subido exitosamente'),
           backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
       if (!mounted) return;
+      Navigator.pop(context); // Cerrar loading
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al subir checkpoint: $e'),
+          content: Text('❌ Error al subir checkpoint: $e'),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
         ),
       );
     }
@@ -257,6 +299,102 @@ class _FleteDetailPageState extends State<FleteDetailPage> {
                 ],
               ),
             ),
+
+            // NUEVO: Dropdown con TODA la información del flete
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Theme(
+                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  tilePadding: EdgeInsets.zero,
+                  childrenPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    Icons.info_outline,
+                    color: theme.colorScheme.primary,
+                    size: 28,
+                  ),
+                  title: Text(
+                    '📋 Ver Información Completa del Flete',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Toca para ver todos los detalles',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildInfoRow('📦 Número Contenedor', widget.flete.numeroContenedor, bold: true),
+                          const Divider(height: 20),
+                          _buildInfoRow('📐 Tipo Contenedor', widget.flete.tipoContenedor),
+                          _buildInfoRow('⚖️ Peso Total', '${NumberFormat('#,###', 'es_CL').format(widget.flete.peso)} kg'),
+                          if (widget.flete.pesoCargaNeta != null)
+                            _buildInfoRow('  📦 Carga Neta', '${NumberFormat('#,###', 'es_CL').format(widget.flete.pesoCargaNeta)} kg'),
+                          if (widget.flete.pesoTara != null)
+                            _buildInfoRow('  ⚖️ Tara', '${NumberFormat('#,###', 'es_CL').format(widget.flete.pesoTara)} kg'),
+                          const Divider(height: 20),
+                          _buildInfoRow('🏭 Origen', widget.flete.origen, bold: true),
+                          if (widget.flete.puertoOrigen != null)
+                            _buildInfoRow('  ⚓ Puerto Origen', widget.flete.puertoOrigen!),
+                          if (widget.flete.rutIngresoSti != null)
+                            _buildInfoRow('  🆔 RUT STI', widget.flete.rutIngresoSti!),
+                          if (widget.flete.rutIngresoPc != null)
+                            _buildInfoRow('  🆔 RUT PC', widget.flete.rutIngresoPc!),
+                          const Divider(height: 20),
+                          _buildInfoRow('🎯 Destino', widget.flete.destino, bold: true),
+                          if (widget.flete.direccionDestino != null)
+                            _buildInfoRow('  📍 Dirección', widget.flete.direccionDestino!),
+                          const Divider(height: 20),
+                          if (widget.flete.fechaHoraCarga != null)
+                            _buildInfoRow('📅 Fecha y Hora Carga', 
+                              DateFormat('dd/MM/yyyy HH:mm').format(widget.flete.fechaHoraCarga!), 
+                              bold: true),
+                          _buildInfoRow('💰 Tarifa', '\$${NumberFormat('#,###', 'es_CL').format(widget.flete.tarifa)}', bold: true),
+                          if (widget.flete.tarifaBase != null)
+                            _buildInfoRow('💵 Tarifa Base', '\$${NumberFormat('#,###', 'es_CL').format(widget.flete.tarifaBase)}'),
+                          if (widget.flete.isFueraDePerimetro)
+                            _buildInfoRow('📍 Fuera de Perímetro', 'SÍ', bold: true),
+                          if (widget.flete.valorAdicionalPerimetro != null)
+                            _buildInfoRow('💰 Valor Perímetro', '\$${NumberFormat('#,###', 'es_CL').format(widget.flete.valorAdicionalPerimetro)}'),
+                          if (widget.flete.valorAdicionalSobrepeso != null)
+                            _buildInfoRow('⚠️ Valor Sobrepeso', '\$${NumberFormat('#,###', 'es_CL').format(widget.flete.valorAdicionalSobrepeso)}'),
+                          if (widget.flete.tipoDeRampla != null)
+                            _buildInfoRow('🚛 Tipo Rampla', widget.flete.tipoDeRampla!),
+                          const Divider(height: 20),
+                          if (widget.flete.requisitosEspeciales != null) ...[
+                            _buildInfoRow('⚠️ Requisitos Especiales', widget.flete.requisitosEspeciales!, multiline: true),
+                            const SizedBox(height: 12),
+                          ],
+                          if (widget.flete.serviciosAdicionales != null) ...[
+                            _buildInfoRow('➕ Servicios Adicionales', widget.flete.serviciosAdicionales!, multiline: true),
+                            const SizedBox(height: 12),
+                          ],
+                          if (widget.flete.devolucionCtnVacio != null) ...[
+                            _buildInfoRow('↩️ Devolución Contenedor', widget.flete.devolucionCtnVacio!, multiline: true),
+                            const SizedBox(height: 12),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const Divider(),
 
             // Progreso general
             FutureBuilder<Map<String, int>>(
@@ -528,5 +666,39 @@ class _FleteDetailPageState extends State<FleteDetailPage> {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildInfoRow(String label, String value, {bool bold = false, bool multiline = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: multiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+                color: bold ? Colors.black87 : Colors.black,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

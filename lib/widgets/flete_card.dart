@@ -175,6 +175,93 @@ class FleteCard extends StatelessWidget {
                 ),
               ],
             ),
+            
+            // NUEVO: Dropdown con información completa (VISTA CLIENTE)
+            const SizedBox(height: 12),
+            Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                childrenPadding: EdgeInsets.zero,
+                title: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Ver todos los detalles',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildDetalleCliente('📦 Contenedor', flete.numeroContenedor, context),
+                        _buildDetalleCliente('📐 Tipo', flete.tipoContenedor, context),
+                        _buildDetalleCliente('⚖️ Peso', '${flete.peso} kg', context),
+                        if (flete.pesoCargaNeta != null)
+                          _buildDetalleCliente('  Carga Neta', '${flete.pesoCargaNeta} kg', context),
+                        if (flete.pesoTara != null)
+                          _buildDetalleCliente('  Tara', '${flete.pesoTara} kg', context),
+                        const Divider(height: 16),
+                        _buildDetalleCliente('🏭 Origen', flete.origen, context, bold: true),
+                        if (flete.puertoOrigen != null)
+                          _buildDetalleCliente('  ⚓ Puerto', flete.puertoOrigen!, context),
+                        if (flete.rutIngresoSti != null)
+                          _buildDetalleCliente('  RUT STI', flete.rutIngresoSti!, context),
+                        if (flete.rutIngresoPc != null)
+                          _buildDetalleCliente('  RUT PC', flete.rutIngresoPc!, context),
+                        const Divider(height: 16),
+                        _buildDetalleCliente('🎯 Destino', flete.destino, context, bold: true),
+                        if (flete.direccionDestino != null)
+                          _buildDetalleCliente('  📍 Dirección', flete.direccionDestino!, context),
+                        const Divider(height: 16),
+                        if (flete.fechaHoraCarga != null) ...[
+                          _buildDetalleCliente('📅 Fecha Carga', 
+                            '${flete.fechaHoraCarga!.day}/${flete.fechaHoraCarga!.month}/${flete.fechaHoraCarga!.year} ${flete.fechaHoraCarga!.hour}:${flete.fechaHoraCarga!.minute.toString().padLeft(2, '0')}', 
+                            context, bold: true),
+                          const Divider(height: 16),
+                        ],
+                        if (flete.isFueraDePerimetro)
+                          _buildDetalleCliente('📍 Fuera Perímetro', 'SÍ', context),
+                        if (flete.tipoDeRampla != null)
+                          _buildDetalleCliente('🚛 Tipo Rampla', flete.tipoDeRampla!, context),
+                        if (flete.requisitosEspeciales != null) ...[
+                          _buildDetalleCliente('⚠️ Requisitos', flete.requisitosEspeciales!, context, multiline: true),
+                          const SizedBox(height: 8),
+                        ],
+                        if (flete.serviciosAdicionales != null) ...[
+                          _buildDetalleCliente('➕ Servicios', flete.serviciosAdicionales!, context, multiline: true),
+                          const SizedBox(height: 8),
+                        ],
+                        if (flete.devolucionCtnVacio != null) ...[
+                          _buildDetalleCliente('↩️ Devolución', flete.devolucionCtnVacio!, context, multiline: true),
+                          const SizedBox(height: 8),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -229,6 +316,37 @@ class FleteCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDetalleCliente(String label, String value, BuildContext context, {bool bold = false, bool multiline = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: multiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+                color: bold ? Colors.black87 : Colors.black,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
       ),
     );
   }

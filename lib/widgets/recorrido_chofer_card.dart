@@ -319,6 +319,103 @@ class RecorridoChoferCard extends StatelessWidget {
                   const SizedBox(height: 20),
                 ],
                 
+                // NUEVO: Dropdown con TODA la información del flete
+                Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    childrenPadding: const EdgeInsets.only(bottom: 16),
+                    leading: Icon(
+                      Icons.info_outline,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 28,
+                    ),
+                    title: Text(
+                      '📋 Ver Información Completa',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Toca para expandir todos los detalles',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildDetalleRow('📦 Número Contenedor', flete.numeroContenedor, bold: true),
+                            const Divider(height: 24),
+                            _buildDetalleRow('📐 Tipo Contenedor', flete.tipoContenedor),
+                            _buildDetalleRow('⚖️ Peso Total', '${NumberFormat('#,###', 'es_CL').format(flete.peso)} kg'),
+                            if (flete.pesoCargaNeta != null)
+                              _buildDetalleRow('  📦 Carga Neta', '${NumberFormat('#,###', 'es_CL').format(flete.pesoCargaNeta)} kg'),
+                            if (flete.pesoTara != null)
+                              _buildDetalleRow('  ⚖️ Tara', '${NumberFormat('#,###', 'es_CL').format(flete.pesoTara)} kg'),
+                            const Divider(height: 24),
+                            _buildDetalleRow('🏭 Origen', flete.origen, bold: true),
+                            if (flete.puertoOrigen != null)
+                              _buildDetalleRow('  ⚓ Puerto Origen', flete.puertoOrigen!),
+                            if (flete.rutIngresoSti != null)
+                              _buildDetalleRow('  🆔 RUT STI', flete.rutIngresoSti!),
+                            if (flete.rutIngresoPc != null)
+                              _buildDetalleRow('  🆔 RUT PC', flete.rutIngresoPc!),
+                            const Divider(height: 24),
+                            _buildDetalleRow('🎯 Destino', flete.destino, bold: true),
+                            if (flete.direccionDestino != null)
+                              _buildDetalleRow('  📍 Dirección Destino', flete.direccionDestino!),
+                            const Divider(height: 24),
+                            if (flete.fechaHoraCarga != null)
+                              _buildDetalleRow('📅 Fecha y Hora Carga', 
+                                DateFormat('dd/MM/yyyy HH:mm').format(flete.fechaHoraCarga!), 
+                                bold: true),
+                            _buildDetalleRow('💰 Tarifa', '\$${NumberFormat('#,###', 'es_CL').format(flete.tarifa)}', bold: true),
+                            if (flete.tarifaBase != null)
+                              _buildDetalleRow('💵 Tarifa Base', '\$${NumberFormat('#,###', 'es_CL').format(flete.tarifaBase)}'),
+                            if (flete.isFueraDePerimetro)
+                              _buildDetalleRow('📍 Fuera de Perímetro', 'SÍ', bold: true),
+                            if (flete.valorAdicionalPerimetro != null)
+                              _buildDetalleRow('💰 Valor Perímetro', '\$${NumberFormat('#,###', 'es_CL').format(flete.valorAdicionalPerimetro)}'),
+                            if (flete.valorAdicionalSobrepeso != null)
+                              _buildDetalleRow('⚠️ Valor Sobrepeso', '\$${NumberFormat('#,###', 'es_CL').format(flete.valorAdicionalSobrepeso)}'),
+                            if (flete.tipoDeRampla != null)
+                              _buildDetalleRow('🚛 Tipo Rampla', flete.tipoDeRampla!),
+                            const Divider(height: 24),
+                            if (flete.requisitosEspeciales != null) ...[
+                              _buildDetalleRow('⚠️ Requisitos Especiales', flete.requisitosEspeciales!, multiline: true),
+                              const SizedBox(height: 12),
+                            ],
+                            if (flete.serviciosAdicionales != null) ...[
+                              _buildDetalleRow('➕ Servicios Adicionales', flete.serviciosAdicionales!, multiline: true),
+                              const SizedBox(height: 12),
+                            ],
+                            if (flete.devolucionCtnVacio != null) ...[
+                              _buildDetalleRow('↩️ Devolución Contenedor', flete.devolucionCtnVacio!, multiline: true),
+                              const SizedBox(height: 12),
+                            ],
+                            const Divider(height: 24),
+                            _buildDetalleRow('📊 Estado', _getNombreEstado(flete.estado), bold: true),
+                            if (flete.fechaAsignacion != null)
+                              _buildDetalleRow('📆 Fecha Asignación', 
+                                DateFormat('dd/MM/yyyy HH:mm').format(flete.fechaAsignacion!)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
+                
                 // Botones de acción
                 Column(
                   children: [
@@ -483,6 +580,54 @@ class RecorridoChoferCard extends StatelessWidget {
     );
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  // NUEVO: Helper para mostrar detalles en el dropdown
+  Widget _buildDetalleRow(String label, String value, {bool bold = false, bool multiline = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: multiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+                color: bold ? Colors.black87 : Colors.black,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getNombreEstado(String estado) {
+    switch (estado) {
+      case 'asignado':
+        return '🔵 Asignado';
+      case 'en_proceso':
+        return '🟠 En Proceso';
+      case 'completado':
+        return '🟢 Completado';
+      default:
+        return estado;
     }
   }
 }

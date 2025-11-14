@@ -7,7 +7,7 @@ import 'package:cargoclick/models/flete.dart';
 import 'package:cargoclick/screens/login_page.dart';
 import 'package:cargoclick/screens/publicar_flete_page.dart';
 import 'package:cargoclick/screens/mis_recorridos_page.dart';
-import 'package:cargoclick/screens/solicitudes_page.dart';
+// import 'package:cargoclick/screens/solicitudes_page.dart'; // DEPRECATED: Ya no se usa (flujo directo por transportista)
 import 'package:cargoclick/screens/fletes_cliente_detalle_page.dart';
 import 'package:cargoclick/screens/perfil_transportista_page.dart';
 import 'package:cargoclick/screens/gestion_flota_page.dart';
@@ -393,15 +393,16 @@ class _HomePageState extends State<HomePage> {
               );
             },
           ),
-          IconButton(
-            tooltip: 'Solicitudes',
-            icon: const Icon(Icons.how_to_reg_outlined),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => SolicitudesPage(clienteId: _usuario!.uid)),
-              );
-            },
-          ),
+          // DEPRECATED: Botón de solicitudes comentado (ya no se usa flujo de solicitudes)
+          // IconButton(
+          //   tooltip: 'Solicitudes',
+          //   icon: const Icon(Icons.how_to_reg_outlined),
+          //   onPressed: () {
+          //     Navigator.of(context).push(
+          //       MaterialPageRoute(builder: (context) => SolicitudesPage(clienteId: _usuario!.uid)),
+          //     );
+          //   },
+          // ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,

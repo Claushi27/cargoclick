@@ -244,6 +244,95 @@ class _FletesClienteDetallePageState extends State<FletesClienteDetallePage> {
               ),
             ),
 
+            // NUEVO: Dropdown con TODA la información del flete (VISTA CLIENTE)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Theme(
+                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  tilePadding: EdgeInsets.zero,
+                  childrenPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    Icons.info_outline,
+                    color: theme.colorScheme.primary,
+                    size: 28,
+                  ),
+                  title: Text(
+                    '📋 Ver Información Completa del Flete',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Toca para ver todos los detalles',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildInfoRow('📦 Número Contenedor', widget.flete.numeroContenedor, bold: true),
+                          const Divider(height: 20),
+                          _buildInfoRow('📐 Tipo Contenedor', widget.flete.tipoContenedor),
+                          _buildInfoRow('⚖️ Peso Total', '${NumberFormat('#,###', 'es_CL').format(widget.flete.peso)} kg'),
+                          if (widget.flete.pesoCargaNeta != null)
+                            _buildInfoRow('  Carga Neta', '${NumberFormat('#,###', 'es_CL').format(widget.flete.pesoCargaNeta)} kg'),
+                          if (widget.flete.pesoTara != null)
+                            _buildInfoRow('  Tara', '${NumberFormat('#,###', 'es_CL').format(widget.flete.pesoTara)} kg'),
+                          const Divider(height: 20),
+                          _buildInfoRow('🏭 Origen', widget.flete.origen, bold: true),
+                          if (widget.flete.puertoOrigen != null)
+                            _buildInfoRow('  Puerto', widget.flete.puertoOrigen!),
+                          if (widget.flete.rutIngresoSti != null)
+                            _buildInfoRow('  RUT STI', widget.flete.rutIngresoSti!),
+                          if (widget.flete.rutIngresoPc != null)
+                            _buildInfoRow('  RUT PC', widget.flete.rutIngresoPc!),
+                          const Divider(height: 20),
+                          _buildInfoRow('🎯 Destino', widget.flete.destino, bold: true),
+                          if (widget.flete.direccionDestino != null)
+                            _buildInfoRow('  Dirección', widget.flete.direccionDestino!),
+                          const Divider(height: 20),
+                          if (widget.flete.fechaHoraCarga != null)
+                            _buildInfoRow('📅 Fecha Carga', 
+                              DateFormat('dd/MM/yyyy HH:mm').format(widget.flete.fechaHoraCarga!), 
+                              bold: true),
+                          _buildInfoRow('💰 Tarifa Total', '\$${NumberFormat('#,###', 'es_CL').format(widget.flete.tarifa)}', bold: true),
+                          if (widget.flete.isFueraDePerimetro)
+                            _buildInfoRow('📍 Fuera Perímetro', 'SÍ'),
+                          if (widget.flete.tipoDeRampla != null)
+                            _buildInfoRow('🚛 Tipo Rampla', widget.flete.tipoDeRampla!),
+                          if (widget.flete.requisitosEspeciales != null) ...[
+                            const Divider(height: 20),
+                            _buildInfoRow('⚠️ Requisitos Especiales', widget.flete.requisitosEspeciales!, multiline: true),
+                          ],
+                          if (widget.flete.serviciosAdicionales != null) ...[
+                            const SizedBox(height: 12),
+                            _buildInfoRow('➕ Servicios Adicionales', widget.flete.serviciosAdicionales!, multiline: true),
+                          ],
+                          if (widget.flete.devolucionCtnVacio != null) ...[
+                            const SizedBox(height: 12),
+                            _buildInfoRow('↩️ Devolución', widget.flete.devolucionCtnVacio!, multiline: true),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const Divider(),
+
             // Hoja de Detalle de Cobro (solo si está completado)
             if (widget.flete.estado == 'completado') ...[
               Padding(
@@ -851,5 +940,39 @@ class _FletesClienteDetallePageState extends State<FletesClienteDetallePage> {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildInfoRow(String label, String value, {bool bold = false, bool multiline = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: multiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+                color: bold ? Colors.black87 : Colors.black,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

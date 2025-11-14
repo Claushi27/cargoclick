@@ -21,9 +21,7 @@ class _MisRecorridosPageState extends State<MisRecorridosPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mis Recorridos'),
-      ),
+      // REMOVIDO: AppBar duplicado (ya existe uno en el HomePage)
       body: StreamBuilder<List<Flete>>(
         stream: _fleteService.getFletesChoferAsignado(widget.choferId),
         builder: (context, snapshot) {

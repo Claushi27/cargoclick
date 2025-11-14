@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cargoclick/models/flete.dart';
 import 'package:cargoclick/services/notifications_service.dart';
 import 'package:cargoclick/services/notification_service.dart';
+import 'package:cargoclick/services/firebase_error_handler.dart';
 
 class FleteService {
   bool get _isBackendReady => Firebase.apps.isNotEmpty;
@@ -15,14 +16,17 @@ class FleteService {
         'Firebase no está configurado. Abre el panel Firebase en Dreamflow y completa la configuración.',
       );
     }
-    return FirebaseFirestore.instance
-        .collection('fletes')
-        .where('cliente_id', isEqualTo: clienteId)
-        .orderBy('fecha_publicacion', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Flete.fromJson(doc.data(), docId: doc.id))
-            .toList());
+    return FirebaseErrorHandler.handleStream(
+      FirebaseFirestore.instance
+          .collection('fletes')
+          .where('cliente_id', isEqualTo: clienteId)
+          .orderBy('fecha_publicacion', descending: true)
+          .limit(50)
+          .snapshots()
+          .map((snapshot) => snapshot.docs
+              .map((doc) => Flete.fromJson(doc.data(), docId: doc.id))
+              .toList()),
+    );
   }
 
   Stream<List<Flete>> getFletesDisponibles() {
@@ -32,14 +36,17 @@ class FleteService {
       );
     }
     // Mostrar fletes disponibles Y solicitados (para que no desaparezcan al aceptar)
-    return FirebaseFirestore.instance
-        .collection('fletes')
-        .where('estado', whereIn: ['disponible', 'solicitado'])
-        .orderBy('fecha_publicacion', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Flete.fromJson(doc.data(), docId: doc.id))
-            .toList());
+    return FirebaseErrorHandler.handleStream(
+      FirebaseFirestore.instance
+          .collection('fletes')
+          .where('estado', whereIn: ['disponible', 'solicitado'])
+          .orderBy('fecha_publicacion', descending: true)
+          .limit(50)
+          .snapshots()
+          .map((snapshot) => snapshot.docs
+              .map((doc) => Flete.fromJson(doc.data(), docId: doc.id))
+              .toList()),
+    );
   }
 
   Future<void> publicarFlete(Flete flete) async {
@@ -48,14 +55,16 @@ class FleteService {
         'Firebase no está configurado. Abre el panel Firebase en Dreamflow y completa la configuración.',
       );
     }
-    final now = DateTime.now();
-    final fleteData = flete.copyWith(
-      createdAt: now,
-      updatedAt: now,
-    );
+    
+    return FirebaseErrorHandler.handle(() async {
+      final now = DateTime.now();
+      final fleteData = flete.copyWith(
+        createdAt: now,
+        updatedAt: now,
+      );
 
-    final docRef = await FirebaseFirestore.instance.collection('fletes').add(fleteData.toJson());
-    final fleteId = docRef.id;
+      final docRef = await FirebaseFirestore.instance.collection('fletes').add(fleteData.toJson());
+      final fleteId = docRef.id;
     
     // NOTIFICAR A TODOS LOS TRANSPORTISTAS
     print('🔔 [publicarFlete] Notificando a transportistas...');
@@ -99,6 +108,7 @@ class FleteService {
       print('❌ [publicarFlete] Error general notificando transportistas: $e');
       // No fallar la publicación si las notificaciones fallan
     }
+    });
   }
 
   Future<void> aceptarFlete(String fleteId, String transportistaId) async {
@@ -110,10 +120,10 @@ class FleteService {
       );
     }
     
-    final db = FirebaseFirestore.instance;
-    final now = DateTime.now();
+    return FirebaseErrorHandler.handle(() async {
+      final db = FirebaseFirestore.instance;
+      final now = DateTime.now();
     
-    try {
       // Primero obtener datos del flete
       print('📖 [aceptarFlete] Leyendo datos del flete...');
       final fleteDoc = await db.collection('fletes').doc(fleteId).get();
@@ -199,43 +209,117 @@ class FleteService {
       }
       
       print('🎉 [aceptarFlete] Proceso completado exitosamente');
-    } catch (e) {
-      print('💥 [aceptarFlete] Error general: $e');
-      print('💥 [aceptarFlete] Stack trace: ${StackTrace.current}');
-      rethrow;
-    }
+    });
   }
 
   Stream<List<Flete>> getFletesAsignadosChofer(String choferId) {
     if (!_isBackendReady) {
       return const Stream.empty();
     }
-    // Query simplificada para evitar necesitar índice compuesto
-    // Solo filtramos por chofer, ordenamos en memoria
-    return FirebaseFirestore.instance
+    
+    // CORREGIDO: Usar 'chofer_asignado' en lugar de 'transportista_asignado'
+    // para evitar duplicados
+    return FirebaseErrorHandler.handleStream(
+      FirebaseFirestore.instance
+          .collection('fletes')
+          .where('chofer_asignado', isEqualTo: choferId)
+          .snapshots()
+          .map((snapshot) {
+            final fletes = snapshot.docs
+                .map((doc) => Flete.fromJson(doc.data(), docId: doc.id))
+                .toList();
+            
+            // Filtrar por estados activos y ordenar por fecha en memoria
+            fletes.retainWhere((f) => 
+              f.estado == 'asignado' || 
+              f.estado == 'en_proceso' || 
+              f.estado == 'completado'
+            );
+            
+            // Ordenar por fecha de asignación (más reciente primero)
+            fletes.sort((a, b) {
+              final dateA = a.fechaAsignacion ?? a.createdAt;
+              final dateB = b.fechaAsignacion ?? b.createdAt;
+              return dateB.compareTo(dateA);
+            });
+            
+            return fletes;
+          }),
+    );
+  }
+
+  /// Verifica si un chofer está disponible (no tiene fletes activos)
+  Future<bool> isChoferDisponible(String choferId) async {
+    if (!_isBackendReady) return false;
+    
+    final db = FirebaseFirestore.instance;
+    final fletesActivos = await db
         .collection('fletes')
-        .where('transportista_asignado', isEqualTo: choferId)
-        .snapshots()
-        .map((snapshot) {
-          final fletes = snapshot.docs
-              .map((doc) => Flete.fromJson(doc.data(), docId: doc.id))
-              .toList();
-          
-          // Filtrar por estados activos y ordenar por fecha en memoria
-          fletes.retainWhere((f) => 
-            f.estado == 'asignado' || 
-            f.estado == 'en_proceso' || 
-            f.estado == 'completado'
-          );
-          
-          fletes.sort((a, b) {
-            final dateA = a.fechaAsignacion ?? a.createdAt;
-            final dateB = b.fechaAsignacion ?? b.createdAt;
-            return dateB.compareTo(dateA); // Descendente
-          });
-          
-          return fletes;
-        });
+        .where('chofer_asignado', isEqualTo: choferId)
+        .where('estado', whereIn: ['asignado', 'en_proceso'])
+        .limit(1)
+        .get();
+    
+    return fletesActivos.docs.isEmpty;
+  }
+
+  /// Verifica si un camión está disponible (no tiene fletes activos)
+  Future<bool> isCamionDisponible(String camionId) async {
+    if (!_isBackendReady) return false;
+    
+    final db = FirebaseFirestore.instance;
+    final fletesActivos = await db
+        .collection('fletes')
+        .where('camion_asignado', isEqualTo: camionId)
+        .where('estado', whereIn: ['asignado', 'en_proceso'])
+        .limit(1)
+        .get();
+    
+    return fletesActivos.docs.isEmpty;
+  }
+
+  /// Obtiene el flete activo de un chofer (si existe)
+  Future<Map<String, dynamic>?> getFleteActivoChofer(String choferId) async {
+    if (!_isBackendReady) return null;
+    
+    final db = FirebaseFirestore.instance;
+    final fletesActivos = await db
+        .collection('fletes')
+        .where('chofer_asignado', isEqualTo: choferId)
+        .where('estado', whereIn: ['asignado', 'en_proceso'])
+        .limit(1)
+        .get();
+    
+    if (fletesActivos.docs.isEmpty) return null;
+    
+    final doc = fletesActivos.docs.first;
+    return {
+      'id': doc.id,
+      'numero_contenedor': doc.data()['numero_contenedor'],
+      'estado': doc.data()['estado'],
+    };
+  }
+
+  /// Obtiene el flete activo de un camión (si existe)
+  Future<Map<String, dynamic>?> getFleteActivoCamion(String camionId) async {
+    if (!_isBackendReady) return null;
+    
+    final db = FirebaseFirestore.instance;
+    final fletesActivos = await db
+        .collection('fletes')
+        .where('camion_asignado', isEqualTo: camionId)
+        .where('estado', whereIn: ['asignado', 'en_proceso'])
+        .limit(1)
+        .get();
+    
+    if (fletesActivos.docs.isEmpty) return null;
+    
+    final doc = fletesActivos.docs.first;
+    return {
+      'id': doc.id,
+      'numero_contenedor': doc.data()['numero_contenedor'],
+      'estado': doc.data()['estado'],
+    };
   }
 
   /// Asigna un flete a un chofer y camión específico (nuevo flujo con transportista)
@@ -258,8 +342,32 @@ class FleteService {
     final db = FirebaseFirestore.instance;
     final now = DateTime.now();
     
-    try {
-      // Verificar que el flete existe y está disponible
+    return FirebaseErrorHandler.handle(() async {
+      // 1. VALIDAR DISPONIBILIDAD DE CHOFER
+      print('👤 [asignarFlete] Verificando disponibilidad de chofer...');
+      final choferDisponible = await isChoferDisponible(choferId);
+      if (!choferDisponible) {
+        final fleteActivo = await getFleteActivoChofer(choferId);
+        throw StateError(
+          'Este chofer ya tiene un flete activo (${fleteActivo?['numero_contenedor'] ?? 'sin número'}). '
+          'Debe completarlo antes de asignar otro.',
+        );
+      }
+      print('✅ [asignarFlete] Chofer disponible');
+
+      // 2. VALIDAR DISPONIBILIDAD DE CAMIÓN
+      print('🚚 [asignarFlete] Verificando disponibilidad de camión...');
+      final camionDisponible = await isCamionDisponible(camionId);
+      if (!camionDisponible) {
+        final fleteActivo = await getFleteActivoCamion(camionId);
+        throw StateError(
+          'Este camión ya tiene un flete activo (${fleteActivo?['numero_contenedor'] ?? 'sin número'}). '
+          'Debe completarse antes de asignar otro.',
+        );
+      }
+      print('✅ [asignarFlete] Camión disponible');
+
+      // 3. Verificar que el flete existe y está disponible
       print('📖 [asignarFlete] Verificando flete...');
       final fleteDoc = await db.collection('fletes').doc(fleteId).get();
       if (!fleteDoc.exists) {
@@ -322,10 +430,7 @@ class FleteService {
       }
       
       print('🎉 [asignarFlete] Asignación completada exitosamente');
-    } catch (e) {
-      print('💥 [asignarFlete] Error: $e');
-      rethrow;
-    }
+    });
   }
 
   /// Obtiene fletes disponibles para transportista (nuevo flujo)

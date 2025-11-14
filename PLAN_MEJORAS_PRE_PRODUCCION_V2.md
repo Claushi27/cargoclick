@@ -2,7 +2,7 @@
 ## 📅 Actualizado: 14 Noviembre 2025
 
 **Estado:** Listo para las últimas mejoras antes de Play Store  
-**Progreso General:** 75% completado
+**Progreso General:** 85% completado
 
 ---
 
@@ -693,13 +693,13 @@ Stream<List<Flete>> getFletes({int limit = 20}) {
 
 ### 🔴 CRÍTICO (Hacer SÍ o SÍ antes de Play Store):
 - [x] 1. Reasignación de chofer/camión ✅ **COMPLETADO**
-- [ ] 2. Manejo robusto de errores de red
-- [ ] 3. Permisos de Android explicados
-- [ ] 4. Optimización de imágenes
+- [x] 2. Manejo robusto de errores de red ✅ **COMPLETADO**
+- [x] 3. Permisos de Android explicados ✅ **COMPLETADO**
+- [x] 4. Optimización de imágenes ✅ **COMPLETADO**
 - [ ] 5. Privacy Policy (obligatorio)
 - [ ] 6. Íconos y screenshots para Play Store
 
-**Tiempo estimado:** 10-12 horas
+**Tiempo estimado restante:** 4-7 horas
 
 ---
 
