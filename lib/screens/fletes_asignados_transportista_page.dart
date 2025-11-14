@@ -7,6 +7,7 @@ import 'package:cargoclick/widgets/flete_card_transportista.dart';
 import 'package:cargoclick/widgets/progress_timeline.dart';
 import 'package:cargoclick/widgets/contact_card.dart';
 import 'package:cargoclick/widgets/instrucciones_card.dart';
+import 'package:cargoclick/widgets/reasignar_dialog.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -616,7 +617,52 @@ class _FletesAsignadosTransportistaPageState extends State<FletesAsignadosTransp
                           DateFormat('dd/MM/yyyy HH:mm').format(flete.fechaAsignacion!)),
                     ]),
                     
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
+                    
+                    // NUEVO: Botón de reasignación
+                    if (flete.estado == 'asignado' || flete.estado == 'en_proceso') ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            Navigator.pop(context); // Cerrar el bottom sheet
+                            
+                            final resultado = await showDialog(
+                              context: context,
+                              builder: (context) => ReasignarDialog(
+                                fleteId: flete.id!,
+                                transportistaId: _transportistaId!,
+                                choferActualId: flete.choferAsignado!,
+                                camionActualId: flete.camionAsignado!,
+                              ),
+                            );
+
+                            if (resultado == true && mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('✅ Reasignación completada. El cliente ha sido notificado.'),
+                                  backgroundColor: Colors.green,
+                                  duration: Duration(seconds: 4),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.swap_horiz),
+                          label: const Text('Cambiar Chofer/Camión'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    
+                    const SizedBox(height: 8),
                     
                     // Botones de acción
                     if (flete.direccionDestino != null) ...[

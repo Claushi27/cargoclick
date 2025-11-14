@@ -9,6 +9,7 @@ import 'package:cargoclick/widgets/rating_dialog.dart';
 import 'package:cargoclick/widgets/rating_display.dart';
 import 'package:cargoclick/widgets/desglose_costos_card.dart';
 import 'package:cargoclick/widgets/hoja_cobro_card.dart';
+import 'package:cargoclick/widgets/historial_cambios_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
@@ -501,6 +502,19 @@ class _FletesClienteDetallePageState extends State<FletesClienteDetallePage> {
                       ),
                     ],
                   ],
+                ),
+              ),
+            ],
+
+            // NUEVO: Historial de Cambios (solo si está asignado o posterior)
+            if (widget.flete.estado == 'asignado' || 
+                widget.flete.estado == 'en_proceso' || 
+                widget.flete.estado == 'completado') ...[
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: HistorialCambiosWidget(
+                  fleteId: widget.flete.id!,
+                  esCliente: true,
                 ),
               ),
             ],

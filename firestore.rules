@@ -242,6 +242,29 @@ service cloud.firestore {
         && resource.data.user_id == request.auth.uid;
     }
 
+    // Cambios de Asignación collection - NUEVO
+    match /cambios_asignacion/{cambioId} {
+      // Lectura: el cliente del flete O el transportista pueden leer
+      allow read: if isAuthenticated() && (
+        exists(/databases/$(database)/documents/fletes/$(resource.data.flete_id))
+        && (get(/databases/$(database)/documents/fletes/$(resource.data.flete_id)).data.cliente_id == request.auth.uid
+            || resource.data.transportista_id == request.auth.uid)
+      );
+      
+      // Creación: solo el transportista del flete puede crear cambios
+      allow create: if isAuthenticated()
+        && request.resource.data.transportista_id == request.auth.uid;
+      
+      // Actualización: solo el cliente puede actualizar (para rechazar el cambio)
+      allow update: if isAuthenticated()
+        && exists(/databases/$(database)/documents/fletes/$(resource.data.flete_id))
+        && get(/databases/$(database)/documents/fletes/$(resource.data.flete_id)).data.cliente_id == request.auth.uid
+        && request.resource.data.estado == 'rechazado_cliente';
+      
+      // No se permite eliminar
+      allow delete: if false;
+    }
+
     // Catch-all: denegar todo lo demás
     match /{document=**} {
       allow read, write: if false;

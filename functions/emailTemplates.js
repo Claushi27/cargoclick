@@ -271,8 +271,103 @@ function templateCompletado(fleteData, destinatario = 'cliente') {
   `;
 }
 
+// Template 4: Email de Cambio de Asignación (Cliente)
+function templateCambioAsignacion(cambioData, fleteData) {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      ${emailStyles}
+    </head>
+    <body>
+      <div class="container">
+        <div class="header" style="background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);">
+          <h1>🔄 Cambio de Chofer/Camión</h1>
+          <p>Notificación de Reasignación</p>
+        </div>
+        
+        <div class="content">
+          <p>Estimado Cliente,</p>
+          <p>Le informamos que el transportista ha realizado un cambio en la asignación del flete <strong>${fleteData.numero_contenedor}</strong>.</p>
+          
+          <div class="alert">
+            ⚠️ <strong>Atención:</strong> Tiene 24 horas para revisar y rechazar este cambio si no está conforme.
+          </div>
+
+          <h3>📋 Motivo del Cambio</h3>
+          <div class="info-box">
+            <div class="info-row">
+              <span class="value">${cambioData.razon}</span>
+            </div>
+          </div>
+
+          <h3>👨‍✈️ Cambio de Chofer</h3>
+          <table style="width: 100%; margin: 20px 0;">
+            <tr>
+              <td style="width: 45%; padding: 15px; background: #ffebee; border-radius: 8px;">
+                <div style="text-align: center;">
+                  <div style="font-size: 12px; color: #666; margin-bottom: 5px;">ANTERIOR</div>
+                  <div style="font-size: 18px; font-weight: bold; color: #d32f2f;">${cambioData.chofer_anterior_nombre}</div>
+                </div>
+              </td>
+              <td style="width: 10%; text-align: center;">
+                <div style="font-size: 24px;">→</div>
+              </td>
+              <td style="width: 45%; padding: 15px; background: #e8f5e9; border-radius: 8px;">
+                <div style="text-align: center;">
+                  <div style="font-size: 12px; color: #666; margin-bottom: 5px;">NUEVO</div>
+                  <div style="font-size: 18px; font-weight: bold; color: #388e3c;">${cambioData.chofer_nuevo_nombre}</div>
+                </div>
+              </td>
+            </tr>
+          </table>
+
+          <h3>🚚 Cambio de Camión</h3>
+          <table style="width: 100%; margin: 20px 0;">
+            <tr>
+              <td style="width: 45%; padding: 15px; background: #ffebee; border-radius: 8px;">
+                <div style="text-align: center;">
+                  <div style="font-size: 12px; color: #666; margin-bottom: 5px;">ANTERIOR</div>
+                  <div style="font-size: 18px; font-weight: bold; font-family: monospace; color: #d32f2f;">${cambioData.camion_anterior_patente}</div>
+                </div>
+              </td>
+              <td style="width: 10%; text-align: center;">
+                <div style="font-size: 24px;">→</div>
+              </td>
+              <td style="width: 45%; padding: 15px; background: #e8f5e9; border-radius: 8px;">
+                <div style="text-align: center;">
+                  <div style="font-size: 12px; color: #666; margin-bottom: 5px;">NUEVO</div>
+                  <div style="font-size: 18px; font-weight: bold; font-family: monospace; color: #388e3c;">${cambioData.camion_nuevo_patente}</div>
+                </div>
+              </td>
+            </tr>
+          </table>
+
+          <div class="alert" style="background: #fff3cd; border-left-color: #ff9800;">
+            ⏰ <strong>Plazo para Rechazar:</strong> 24 horas desde ahora<br>
+            Si no está conforme con este cambio, puede rechazarlo desde la aplicación dentro de las próximas 24 horas.
+          </div>
+
+          <center>
+            <a href="https://cargoclick.web.app" class="button">Ver en la Aplicación</a>
+          </center>
+        </div>
+        
+        <div class="footer">
+          <p>CargoClick - Sistema de Gestión de Fletes</p>
+          <p>Este es un email automático, por favor no responder.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
 module.exports = {
   templateAsignacion,
   templateValidacion,
-  templateCompletado
+  templateCompletado,
+  templateCambioAsignacion
 };

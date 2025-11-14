@@ -12,7 +12,7 @@ const {getFirestore} = require("firebase-admin/firestore");
 const {getMessaging} = require("firebase-admin/messaging");
 const nodemailer = require("nodemailer");
 const emailConfig = require("./emailConfig");
-const {templateAsignacion, templateValidacion, templateCompletado} = require("./emailTemplates");
+const {templateAsignacion, templateValidacion, templateCompletado, templateCambioAsignacion} = require("./emailTemplates");
 
 initializeApp();
 setGlobalOptions({maxInstances: 10});
@@ -246,6 +246,47 @@ exports.sendEmailOnCompletion = onDocumentUpdated(
         return null;
       } catch (error) {
         console.error(`❌ Error enviando emails de completado: ${error}`);
+        return null;
+      }
+    });
+
+// Enviar email cuando hay un cambio de asignación
+exports.sendEmailOnCambioAsignacion = onDocumentCreated(
+    "cambios_asignacion/{cambioId}",
+    async (event) => {
+      try {
+        const cambioData = event.data.data();
+        const fleteId = cambioData.flete_id;
+
+        console.log(`📧 Enviando email de cambio de asignación para flete ${fleteId}`);
+
+        const db = getFirestore();
+
+        // Obtener datos del flete
+        const fleteDoc = await db.collection("fletes").doc(fleteId).get();
+        const fleteData = fleteDoc.data();
+
+        // Obtener email del cliente
+        const clienteDoc = await db.collection("users").doc(fleteData.cliente_id).get();
+        const clienteEmail = clienteDoc.data().email;
+
+        console.log(`📧 Preparando email para cliente: ${clienteEmail}`);
+        console.log(`   Cambio: ${cambioData.chofer_anterior_nombre} → ${cambioData.chofer_nuevo_nombre}`);
+        console.log(`   Razón: ${cambioData.razon}`);
+
+        // Enviar email al cliente
+        const htmlContent = templateCambioAsignacion(cambioData, fleteData);
+        await sendEmail(
+          clienteEmail,
+          "🔄 Cambio de Chofer/Camión - Tiene 24h para Revisar",
+          htmlContent
+        );
+
+        console.log(`✅ Email de cambio de asignación enviado exitosamente`);
+
+        return null;
+      } catch (error) {
+        console.error(`❌ Error enviando email de cambio: ${error}`);
         return null;
       }
     });

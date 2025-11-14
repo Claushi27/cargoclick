@@ -406,4 +406,252 @@ class FleteService {
           return fletes;
         });
   }
+
+  /// NUEVO: Reasignar chofer/camión (OPCIÓN HÍBRIDA)
+  /// - El transportista hace el cambio inmediatamente
+  /// - Se registra en historial de cambios
+  /// - Se notifica al cliente por email
+  /// - Cliente tiene 24 horas para rechazar
+  Future<void> reasignarChoferCamion({
+    required String fleteId,
+    required String transportistaId,
+    required String nuevoChoferId,
+    required String nuevoCamionId,
+    required String razon,
+  }) async {
+    print('🔄 [reasignarChoferCamion] Iniciando reasignación');
+    print('   FleteID: $fleteId');
+    print('   Nuevo ChoferID: $nuevoChoferId');
+    print('   Nuevo CamionID: $nuevoCamionId');
+    print('   Razón: $razon');
+
+    if (!_isBackendReady) {
+      throw StateError('Firebase no está configurado.');
+    }
+
+    final db = FirebaseFirestore.instance;
+    final now = DateTime.now();
+    final fechaLimite = now.add(const Duration(hours: 24));
+
+    try {
+      // 1. Obtener datos actuales del flete
+      print('📖 [reasignarChoferCamion] Obteniendo datos del flete...');
+      final fleteDoc = await db.collection('fletes').doc(fleteId).get();
+      
+      if (!fleteDoc.exists) {
+        throw StateError('Flete no encontrado');
+      }
+
+      final fleteData = fleteDoc.data()!;
+      final estadoActual = fleteData['estado'] as String;
+
+      // Solo permitir reasignación si está asignado o en proceso
+      if (estadoActual != 'asignado' && estadoActual != 'en_proceso') {
+        throw StateError('Solo se puede reasignar fletes asignados o en proceso');
+      }
+
+      // Verificar que sea el transportista correcto
+      if (fleteData['transportista_id'] != transportistaId) {
+        throw StateError('No tienes permiso para reasignar este flete');
+      }
+
+      final choferAnteriorId = fleteData['chofer_asignado'] as String;
+      final camionAnteriorId = fleteData['camion_asignado'] as String;
+      final clienteId = fleteData['cliente_id'] as String;
+      final numeroContenedor = fleteData['numero_contenedor'] as String? ?? 'Sin número';
+
+      // 2. Obtener nombres del chofer anterior y nuevo
+      print('📋 [reasignarChoferCamion] Obteniendo datos de choferes...');
+      final choferAnteriorDoc = await db.collection('users').doc(choferAnteriorId).get();
+      final choferNuevoDoc = await db.collection('users').doc(nuevoChoferId).get();
+      
+      final choferAnteriorNombre = choferAnteriorDoc.data()?['display_name'] as String? ?? 'Chofer anterior';
+      final choferNuevoNombre = choferNuevoDoc.data()?['display_name'] as String? ?? 'Chofer nuevo';
+
+      // 3. Obtener patentes de camiones
+      print('🚚 [reasignarChoferCamion] Obteniendo datos de camiones...');
+      final camionAnteriorDoc = await db.collection('camiones').doc(camionAnteriorId).get();
+      final camionNuevoDoc = await db.collection('camiones').doc(nuevoCamionId).get();
+      
+      final camionAnteriorPatente = camionAnteriorDoc.data()?['patente'] as String? ?? 'N/A';
+      final camionNuevoPatente = camionNuevoDoc.data()?['patente'] as String? ?? 'N/A';
+
+      // 4. Crear registro de cambio en historial
+      print('📝 [reasignarChoferCamion] Creando registro de cambio...');
+      final cambioData = {
+        'flete_id': fleteId,
+        'transportista_id': transportistaId,
+        'razon': razon,
+        'chofer_anterior_id': choferAnteriorId,
+        'chofer_anterior_nombre': choferAnteriorNombre,
+        'camion_anterior_id': camionAnteriorId,
+        'camion_anterior_patente': camionAnteriorPatente,
+        'chofer_nuevo_id': nuevoChoferId,
+        'chofer_nuevo_nombre': choferNuevoNombre,
+        'camion_nuevo_id': nuevoCamionId,
+        'camion_nuevo_patente': camionNuevoPatente,
+        'fecha_cambio': Timestamp.fromDate(now),
+        'estado': 'activo',
+        'fecha_limite_rechazo': Timestamp.fromDate(fechaLimite),
+      };
+
+      await db.collection('cambios_asignacion').add(cambioData);
+      print('✅ [reasignarChoferCamion] Registro de cambio creado');
+
+      // 5. Actualizar el flete con nueva asignación
+      print('🔄 [reasignarChoferCamion] Actualizando flete...');
+      await db.collection('fletes').doc(fleteId).update({
+        'chofer_asignado': nuevoChoferId,
+        'camion_asignado': nuevoCamionId,
+        'transportista_asignado': nuevoChoferId, // Legacy
+        'updated_at': Timestamp.fromDate(now),
+      });
+      print('✅ [reasignarChoferCamion] Flete actualizado');
+
+      // 6. Notificar al CLIENTE (email + notificación push)
+      print('📧 [reasignarChoferCamion] Enviando notificaciones...');
+      
+      // Notificación push
+      try {
+        await _notificationService.enviarNotificacion(
+          userId: clienteId,
+          tipo: 'cambio_asignacion',
+          titulo: '🔄 Cambio de Chofer/Camión',
+          mensaje: 'Flete $numeroContenedor: $choferAnteriorNombre → $choferNuevoNombre. Tienes 24h para rechazar.',
+          fleteId: fleteId,
+        );
+        print('✅ [reasignarChoferCamion] Notificación push enviada al cliente');
+      } catch (e) {
+        print('⚠️ [reasignarChoferCamion] Error enviando notificación push: $e');
+      }
+
+      // El email se enviará automáticamente por Cloud Function
+      // (se activa cuando se crea un documento en 'cambios_asignacion')
+
+      // 7. Notificar al CHOFER NUEVO
+      try {
+        await _notificationService.enviarNotificacion(
+          userId: nuevoChoferId,
+          tipo: 'asignacion',
+          titulo: '🚛 Nuevo Flete Asignado',
+          mensaje: 'Te han asignado el flete $numeroContenedor (reasignación)',
+          fleteId: fleteId,
+        );
+        print('✅ [reasignarChoferCamion] Notificación enviada al chofer nuevo');
+      } catch (e) {
+        print('⚠️ [reasignarChoferCamion] Error enviando notificación al chofer: $e');
+      }
+
+      // 8. Notificar al CHOFER ANTERIOR
+      try {
+        await _notificationService.enviarNotificacion(
+          userId: choferAnteriorId,
+          tipo: 'cambio_asignacion',
+          titulo: 'Flete Reasignado',
+          mensaje: 'El flete $numeroContenedor ha sido reasignado a otro chofer',
+          fleteId: fleteId,
+        );
+        print('✅ [reasignarChoferCamion] Notificación enviada al chofer anterior');
+      } catch (e) {
+        print('⚠️ [reasignarChoferCamion] Error enviando notificación al chofer anterior: $e');
+      }
+
+      print('🎉 [reasignarChoferCamion] Reasignación completada exitosamente');
+    } catch (e) {
+      print('💥 [reasignarChoferCamion] Error: $e');
+      rethrow;
+    }
+  }
+
+  /// Obtener historial de cambios de un flete
+  Stream<List<Map<String, dynamic>>> getHistorialCambios(String fleteId) {
+    if (!_isBackendReady) {
+      return Stream<List<Map<String, dynamic>>>.error('Firebase no está configurado.');
+    }
+    
+    return FirebaseFirestore.instance
+        .collection('cambios_asignacion')
+        .where('flete_id', isEqualTo: fleteId)
+        .orderBy('fecha_cambio', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => {'id': doc.id, ...doc.data()})
+            .toList());
+  }
+
+  /// Cliente rechaza un cambio de asignación
+  Future<void> rechazarCambioAsignacion({
+    required String cambioId,
+    required String fleteId,
+    required String motivo,
+  }) async {
+    print('❌ [rechazarCambioAsignacion] Iniciando rechazo');
+    print('   CambioID: $cambioId');
+    print('   FleteID: $fleteId');
+    print('   Motivo: $motivo');
+
+    if (!_isBackendReady) {
+      throw StateError('Firebase no está configurado.');
+    }
+
+    final db = FirebaseFirestore.instance;
+    final now = DateTime.now();
+
+    try {
+      // 1. Obtener datos del cambio
+      final cambioDoc = await db.collection('cambios_asignacion').doc(cambioId).get();
+      
+      if (!cambioDoc.exists) {
+        throw StateError('Cambio no encontrado');
+      }
+
+      final cambioData = cambioDoc.data()!;
+      final fechaLimite = (cambioData['fecha_limite_rechazo'] as Timestamp).toDate();
+
+      // Verificar que aún esté dentro del plazo
+      if (now.isAfter(fechaLimite)) {
+        throw StateError('El plazo para rechazar este cambio ha expirado');
+      }
+
+      // 2. Marcar cambio como rechazado
+      await db.collection('cambios_asignacion').doc(cambioId).update({
+        'estado': 'rechazado_cliente',
+        'fecha_rechazo': Timestamp.fromDate(now),
+        'motivo_rechazo': motivo,
+      });
+      print('✅ [rechazarCambioAsignacion] Cambio marcado como rechazado');
+
+      // 3. Revertir el flete a la asignación anterior
+      await db.collection('fletes').doc(fleteId).update({
+        'chofer_asignado': cambioData['chofer_anterior_id'],
+        'camion_asignado': cambioData['camion_anterior_id'],
+        'transportista_asignado': cambioData['chofer_anterior_id'], // Legacy
+        'updated_at': Timestamp.fromDate(now),
+      });
+      print('✅ [rechazarCambioAsignacion] Flete revertido a asignación anterior');
+
+      // 4. Notificar al transportista del rechazo
+      final transportistaId = cambioData['transportista_id'] as String;
+      final numeroContenedor = (await db.collection('fletes').doc(fleteId).get())
+          .data()?['numero_contenedor'] as String? ?? 'Sin número';
+
+      try {
+        await _notificationService.enviarNotificacion(
+          userId: transportistaId,
+          tipo: 'cambio_rechazado',
+          titulo: '❌ Cambio Rechazado por Cliente',
+          mensaje: 'Flete $numeroContenedor: El cliente rechazó el cambio. Motivo: $motivo',
+          fleteId: fleteId,
+        );
+        print('✅ [rechazarCambioAsignacion] Notificación enviada al transportista');
+      } catch (e) {
+        print('⚠️ [rechazarCambioAsignacion] Error enviando notificación: $e');
+      }
+
+      print('🎉 [rechazarCambioAsignacion] Rechazo completado');
+    } catch (e) {
+      print('💥 [rechazarCambioAsignacion] Error: $e');
+      rethrow;
+    }
+  }
 }
