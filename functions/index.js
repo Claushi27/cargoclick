@@ -1,6 +1,6 @@
 /**
  * Cloud Functions para CargoClick
- * Envía notificaciones push cuando se crean notificaciones en Firestore
+ * Envía notificaciones push y emails cuando ocurren eventos importantes
  */
 
 const {onDocumentCreated} = require("firebase-functions/v2/firestore");
@@ -10,9 +10,40 @@ const {setGlobalOptions} = require("firebase-functions/v2");
 const {initializeApp} = require("firebase-admin/app");
 const {getFirestore} = require("firebase-admin/firestore");
 const {getMessaging} = require("firebase-admin/messaging");
+const nodemailer = require("nodemailer");
+const emailConfig = require("./emailConfig");
+const {templateAsignacion, templateValidacion, templateCompletado} = require("./emailTemplates");
 
 initializeApp();
 setGlobalOptions({maxInstances: 10});
+
+// Configurar transportador de email
+const transporter = nodemailer.createTransport(emailConfig.smtp);
+
+// Función helper para enviar emails
+async function sendEmail(to, subject, html) {
+  try {
+    // Si está en modo test, usa email de prueba
+    const finalTo = emailConfig.useTestEmails 
+      ? emailConfig.defaults.testEmails.cliente 
+      : to;
+
+    const info = await transporter.sendMail({
+      from: emailConfig.defaults.from,
+      to: finalTo,
+      subject: subject,
+      html: html
+    });
+
+    console.log(`✅ Email enviado: ${info.messageId}`);
+    console.log(`   To: ${finalTo} (original: ${to})`);
+    return info;
+  } catch (error) {
+    console.error(`❌ Error enviando email: ${error}`);
+    throw error;
+  }
+}
+
 
 // Función que envía notificaciones push cuando se crea una notificación
 exports.sendPushNotification = onDocumentCreated(
@@ -72,7 +103,7 @@ exports.sendPushNotification = onDocumentCreated(
       }
     });
 
-// NUEVA: Enviar email cuando se asigna chofer/camión
+// Enviar email cuando se asigna chofer/camión
 exports.sendEmailOnAssignment = onDocumentUpdated(
     "fletes/{fleteId}",
     async (event) => {
@@ -98,29 +129,30 @@ exports.sendEmailOnAssignment = onDocumentUpdated(
           const camionDoc = await db.collection("camiones").doc(after.camion_asignado).get();
           const camionData = camionDoc.data();
 
-          // Aquí agregarías el servicio de email (SendGrid, Nodemailer, etc.)
-          // Por ahora solo log
-          console.log(`📧 Email a enviar a: ${clienteEmail}`);
+          console.log(`📧 Preparando email para: ${clienteEmail}`);
           console.log(`   Chofer: ${choferData.display_name}`);
           console.log(`   Camión: ${camionData.patente}`);
           console.log(`   Flete: ${after.numero_contenedor}`);
 
-          // TODO: Implementar envío real de email
-          // await sendEmail({
-          //   to: clienteEmail,
-          //   subject: 'Flete Asignado - Datos de Transporte',
-          //   html: templateEmailAsignacion(after, choferData, camionData)
-          // });
+          // Enviar email al cliente con datos del transporte
+          const htmlContent = templateAsignacion(after, choferData, camionData);
+          await sendEmail(
+            clienteEmail,
+            emailConfig.subjects.asignacion,
+            htmlContent
+          );
+
+          console.log(`✅ Email de asignación enviado exitosamente`);
         }
 
         return null;
       } catch (error) {
-        console.error(`❌ Error enviando email: ${error}`);
+        console.error(`❌ Error enviando email de asignación: ${error}`);
         return null;
       }
     });
 
-// NUEVA: Enviar email cuando se aprueba camión/chofer
+// Enviar email cuando se aprueba camión/chofer
 exports.sendEmailOnValidation = onDocumentUpdated(
     "camiones/{camionId}",
     async (event) => {
@@ -139,20 +171,81 @@ exports.sendEmailOnValidation = onDocumentUpdated(
               .doc(after.transportista_id).get();
           const transportistaEmail = transportistaDoc.data().email;
 
-          console.log(`📧 Email a enviar a transportista: ${transportistaEmail}`);
+          console.log(`📧 Preparando email para transportista: ${transportistaEmail}`);
           console.log(`   Camión aprobado: ${after.patente}`);
 
-          // TODO: Implementar envío real
-          // await sendEmail({
-          //   to: transportistaEmail,
-          //   subject: '✅ Camión Aprobado',
-          //   html: templateCamionAprobado(after)
-          // });
+          // Enviar email al transportista
+          const htmlContent = templateValidacion(after);
+          await sendEmail(
+            transportistaEmail,
+            emailConfig.subjects.validacion,
+            htmlContent
+          );
+
+          console.log(`✅ Email de validación enviado exitosamente`);
         }
 
         return null;
       } catch (error) {
-        console.error(`❌ Error: ${error}`);
+        console.error(`❌ Error enviando email de validación: ${error}`);
+        return null;
+      }
+    });
+
+// Enviar email cuando se completa el flete
+exports.sendEmailOnCompletion = onDocumentUpdated(
+    "fletes/{fleteId}",
+    async (event) => {
+      try {
+        const before = event.data.before.data();
+        const after = event.data.after.data();
+
+        // Solo si cambió a estado 'completado'
+        if (before.estado !== "completado" && after.estado === "completado") {
+          console.log(`📧 Enviando emails de completado para flete ${event.params.fleteId}`);
+
+          const db = getFirestore();
+
+          // Obtener datos del cliente
+          const clienteDoc = await db.collection("users").doc(after.cliente_id).get();
+          const clienteEmail = clienteDoc.data().email;
+
+          // Obtener datos del transportista
+          let transportistaEmail = null;
+          if (after.transportista_id) {
+            const transportistaDoc = await db.collection("transportistas")
+                .doc(after.transportista_id).get();
+            transportistaEmail = transportistaDoc.data().email;
+          }
+
+          console.log(`📧 Flete completado: ${after.numero_contenedor}`);
+          console.log(`   Cliente: ${clienteEmail}`);
+          console.log(`   Transportista: ${transportistaEmail}`);
+
+          // Email al cliente (con info de facturación)
+          const htmlCliente = templateCompletado(after, 'cliente');
+          await sendEmail(
+            clienteEmail,
+            emailConfig.subjects.completado,
+            htmlCliente
+          );
+
+          // Email al transportista (confirmación de servicio)
+          if (transportistaEmail) {
+            const htmlTransportista = templateCompletado(after, 'transportista');
+            await sendEmail(
+              transportistaEmail,
+              emailConfig.subjects.completado,
+              htmlTransportista
+            );
+          }
+
+          console.log(`✅ Emails de completado enviados exitosamente`);
+        }
+
+        return null;
+      } catch (error) {
+        console.error(`❌ Error enviando emails de completado: ${error}`);
         return null;
       }
     });
