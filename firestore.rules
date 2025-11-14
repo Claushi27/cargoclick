@@ -224,6 +224,24 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Notificaciones collection - NUEVO
+    match /notificaciones/{notifId} {
+      // Lectura: solo el usuario a quien va dirigida la notificación
+      allow read: if isAuthenticated() 
+        && resource.data.user_id == request.auth.uid;
+      
+      // Creación: cualquier autenticado puede crear notificaciones
+      allow create: if isAuthenticated();
+      
+      // Actualización: solo el usuario dueño puede actualizar (marcar como leída)
+      allow update: if isAuthenticated() 
+        && resource.data.user_id == request.auth.uid;
+      
+      // Eliminación: solo el usuario dueño puede eliminar
+      allow delete: if isAuthenticated() 
+        && resource.data.user_id == request.auth.uid;
+    }
+
     // Catch-all: denegar todo lo demás
     match /{document=**} {
       allow read, write: if false;

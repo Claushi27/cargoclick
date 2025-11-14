@@ -2,10 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cargoclick/models/flete.dart';
 import 'package:cargoclick/services/notifications_service.dart';
+import 'package:cargoclick/services/notification_service.dart';
 
 class FleteService {
   bool get _isBackendReady => Firebase.apps.isNotEmpty;
   final _noti = NotificationsService();
+  final _notificationService = NotificationService();
 
   Stream<List<Flete>> getFletesCliente(String clienteId) {
     if (!_isBackendReady) {
@@ -52,7 +54,51 @@ class FleteService {
       updatedAt: now,
     );
 
-    await FirebaseFirestore.instance.collection('fletes').add(fleteData.toJson());
+    final docRef = await FirebaseFirestore.instance.collection('fletes').add(fleteData.toJson());
+    final fleteId = docRef.id;
+    
+    // NOTIFICAR A TODOS LOS TRANSPORTISTAS
+    print('🔔 [publicarFlete] Notificando a transportistas...');
+    try {
+      // Obtener todos los transportistas
+      final transportistasSnapshot = await FirebaseFirestore.instance
+          .collection('transportistas')
+          .get();
+      
+      print('📋 [publicarFlete] Encontrados ${transportistasSnapshot.docs.length} transportistas');
+      
+      // Enviar notificación a cada transportista
+      for (var doc in transportistasSnapshot.docs) {
+        try {
+          final transportistaId = doc.id;
+          final tarifaMinima = doc.data()['tarifa_minima'] as double?;
+          
+          // Filtro opcional: solo notificar si tarifa del flete >= tarifa mínima del transportista
+          if (tarifaMinima != null && flete.tarifa < tarifaMinima) {
+            print('⏭️ [publicarFlete] Saltando transportista $transportistaId (tarifa baja)');
+            continue;
+          }
+          
+          await _notificationService.enviarNotificacion(
+            userId: transportistaId,
+            tipo: 'nuevo_flete',
+            titulo: '🚛 Nuevo Flete Disponible',
+            mensaje: '${flete.numeroContenedor} - ${flete.origen} → ${flete.destino} - \$${flete.tarifa.toStringAsFixed(0)}',
+            fleteId: fleteId,
+          );
+          
+          print('✅ [publicarFlete] Notificación enviada a transportista $transportistaId');
+        } catch (e) {
+          print('⚠️ [publicarFlete] Error notificando transportista: $e');
+          // Continuar con los demás
+        }
+      }
+      
+      print('🎉 [publicarFlete] Notificaciones enviadas a ${transportistasSnapshot.docs.length} transportistas');
+    } catch (e) {
+      print('❌ [publicarFlete] Error general notificando transportistas: $e');
+      // No fallar la publicación si las notificaciones fallan
+    }
   }
 
   Future<void> aceptarFlete(String fleteId, String transportistaId) async {
@@ -241,21 +287,38 @@ class FleteService {
       });
       print('✅ [asignarFlete] Flete actualizado exitosamente');
       
-      // Intentar enviar notificación al chofer (no crítico)
-      print('🔔 [asignarFlete] Enviando notificación al chofer...');
+      final clienteId = fleteData['cliente_id'] as String;
+      final numeroContenedor = fleteData['numero_contenedor'] as String? ?? 'Sin número';
+      
+      // ENVIAR NOTIFICACIONES A CLIENTE Y CHOFER
+      print('🔔 [asignarFlete] Enviando notificaciones...');
+      
+      // Notificación al CLIENTE
       try {
-        await _noti.sendNotification(
-          toUserId: choferId,
-          title: 'Flete asignado',
-          body: 'Te han asignado un nuevo flete: ${fleteData['numero_contenedor']}',
-          data: {
-            'flete_id': fleteId,
-            'type': 'flete_asignado',
-          },
+        await _notificationService.enviarNotificacion(
+          userId: clienteId,
+          tipo: 'asignacion',
+          titulo: '✅ Flete Asignado',
+          mensaje: 'Tu flete $numeroContenedor ha sido asignado a un chofer',
+          fleteId: fleteId,
         );
-        print('✅ [asignarFlete] Notificación enviada');
+        print('✅ [asignarFlete] Notificación enviada al cliente');
       } catch (e) {
-        print('⚠️ [asignarFlete] Error enviando notificación (no crítico): $e');
+        print('⚠️ [asignarFlete] Error enviando notificación al cliente: $e');
+      }
+      
+      // Notificación al CHOFER
+      try {
+        await _notificationService.enviarNotificacion(
+          userId: choferId,
+          tipo: 'asignacion',
+          titulo: '🚛 Nuevo Recorrido',
+          mensaje: 'Te han asignado el flete $numeroContenedor',
+          fleteId: fleteId,
+        );
+        print('✅ [asignarFlete] Notificación enviada al chofer');
+      } catch (e) {
+        print('⚠️ [asignarFlete] Error enviando notificación al chofer: $e');
       }
       
       print('🎉 [asignarFlete] Asignación completada exitosamente');

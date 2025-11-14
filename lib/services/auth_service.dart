@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cargoclick/models/usuario.dart';
 import 'package:cargoclick/models/transportista.dart';
+import 'package:cargoclick/services/notification_service.dart';
 
 class AuthService {
   bool get _isBackendReady => Firebase.apps.isNotEmpty;
@@ -132,6 +133,17 @@ class AuthService {
       );
       // Ensure user profile doc exists for legacy accounts
       await _ensureUserDocExists(credential.user);
+      
+      // Guardar token FCM del dispositivo
+      if (credential.user != null) {
+        try {
+          final notificationService = NotificationService();
+          await notificationService.saveTokenToFirestore(credential.user!.uid);
+        } catch (e) {
+          print('⚠️ Error guardando token FCM: $e');
+          // No fallar el login si no se puede guardar el token
+        }
+      }
       
       return await getCurrentUsuario();
     } catch (e) {

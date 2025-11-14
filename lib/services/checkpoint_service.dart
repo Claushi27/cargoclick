@@ -3,11 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cargoclick/models/checkpoint.dart';
 import 'package:cargoclick/services/notifications_service.dart';
+import 'package:cargoclick/services/notification_service.dart';
 
 class CheckpointService {
   final _db = FirebaseFirestore.instance;
   final _storage = FirebaseStorage.instance;
   final _notificationsService = NotificationsService();
+  final _notificationService = NotificationService();
 
   // Definición de los 5 checkpoints obligatorios
   static const checkpointTypes = [
@@ -152,6 +154,46 @@ class CheckpointService {
           'updated_at': Timestamp.fromDate(now),
         });
         print('✅ Flete marcado como completado');
+        
+        // ENVIAR NOTIFICACIONES AL CLIENTE Y TRANSPORTISTA
+        final fleteDoc = await _db.collection('fletes').doc(fleteId).get();
+        final fleteData = fleteDoc.data();
+        if (fleteData != null) {
+          final clienteId = fleteData['cliente_id'] as String;
+          final transportistaId = fleteData['transportista_id'] as String?;
+          final numeroContenedor = fleteData['numero_contenedor'] as String? ?? 'Sin número';
+          
+          // Notificar al CLIENTE
+          try {
+            await _notificationService.enviarNotificacion(
+              userId: clienteId,
+              tipo: 'completado',
+              titulo: '🎉 Flete Completado',
+              mensaje: 'El flete $numeroContenedor ha sido completado exitosamente',
+              fleteId: fleteId,
+            );
+            print('✅ Notificación de completado enviada al cliente');
+          } catch (e) {
+            print('⚠️ Error notificando al cliente: $e');
+          }
+          
+          // Notificar al TRANSPORTISTA
+          if (transportistaId != null) {
+            try {
+              await _notificationService.enviarNotificacion(
+                userId: transportistaId,
+                tipo: 'completado',
+                titulo: '✅ Flete Completado',
+                mensaje: 'El flete $numeroContenedor ha sido completado',
+                fleteId: fleteId,
+              );
+              print('✅ Notificación de completado enviada al transportista');
+            } catch (e) {
+              print('⚠️ Error notificando al transportista: $e');
+            }
+          }
+        }
+        
       } catch (e) {
         print('⚠️ Error al actualizar estado del flete: $e');
         // No lanzar el error, el checkpoint ya está guardado
