@@ -87,14 +87,81 @@ class NotificationService {
     try {
       String? token = await getToken();
       if (token != null) {
-        await _firestore.collection('users').doc(userId).update({
+        // Primero limpiar este token de otros usuarios
+        await _removeTokenFromOtherUsers(token, userId);
+        
+        // Luego guardarlo en el usuario actual
+        await _firestore.collection('users').doc(userId).set({
           'fcm_token': token,
           'fcm_updated_at': FieldValue.serverTimestamp(),
-        });
+        }, SetOptions(merge: true));
+        
+        // También intentar en transportistas por si acaso
+        await _firestore.collection('transportistas').doc(userId).set({
+          'fcm_token': token,
+          'fcm_updated_at': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+        
         print('✅ Token FCM guardado para usuario $userId');
       }
     } catch (e) {
       print('❌ Error guardando token: $e');
+    }
+  }
+
+  // Remover token de otros usuarios (cuando se loguea nuevo usuario en mismo dispositivo)
+  Future<void> _removeTokenFromOtherUsers(String token, String currentUserId) async {
+    try {
+      // Buscar en users
+      final usersQuery = await _firestore
+          .collection('users')
+          .where('fcm_token', isEqualTo: token)
+          .get();
+      
+      for (var doc in usersQuery.docs) {
+        if (doc.id != currentUserId) {
+          await doc.reference.update({
+            'fcm_token': FieldValue.delete(),
+          });
+          print('🧹 Token removido de usuario ${doc.id}');
+        }
+      }
+      
+      // Buscar en transportistas
+      final transportistasQuery = await _firestore
+          .collection('transportistas')
+          .where('fcm_token', isEqualTo: token)
+          .get();
+      
+      for (var doc in transportistasQuery.docs) {
+        if (doc.id != currentUserId) {
+          await doc.reference.update({
+            'fcm_token': FieldValue.delete(),
+          });
+          print('🧹 Token removido de transportista ${doc.id}');
+        }
+      }
+    } catch (e) {
+      print('⚠️ Error limpiando tokens viejos: $e');
+    }
+  }
+
+  // Remover token del usuario actual (al hacer logout)
+  Future<void> removeTokenFromFirestore(String userId) async {
+    try {
+      // Remover de users
+      await _firestore.collection('users').doc(userId).update({
+        'fcm_token': FieldValue.delete(),
+      });
+      
+      // Remover de transportistas
+      await _firestore.collection('transportistas').doc(userId).update({
+        'fcm_token': FieldValue.delete(),
+      });
+      
+      print('✅ Token FCM removido de usuario $userId');
+    } catch (e) {
+      print('⚠️ Error removiendo token: $e');
     }
   }
 

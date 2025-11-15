@@ -19,6 +19,8 @@ class _PerfilTransportistaPageState extends State<PerfilTransportistaPage> {
   Transportista? _transportista;
   bool _isLoading = true;
   bool _editandoTarifa = false;
+  bool _editandoPuerto = false;
+  String? _puertoSeleccionado;
 
   @override
   void initState() {
@@ -42,6 +44,7 @@ class _PerfilTransportistaPageState extends State<PerfilTransportistaPage> {
           if (transportista?.tarifaMinima != null) {
             _tarifaMinimaController.text = transportista!.tarifaMinima!.toStringAsFixed(0);
           }
+          _puertoSeleccionado = transportista?.puertoPreferido;
         });
       }
     } catch (e) {
@@ -111,6 +114,37 @@ class _PerfilTransportistaPageState extends State<PerfilTransportistaPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Tarifa mínima actualizada correctamente'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al actualizar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _guardarPuertoPreferido() async {
+    try {
+      await _authService.actualizarPuertoPreferido(_transportista!.uid, _puertoSeleccionado);
+      setState(() {
+        _transportista = _transportista!.copyWith(puertoPreferido: _puertoSeleccionado);
+        _editandoPuerto = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _puertoSeleccionado == null 
+                ? 'Verás fletes de ambos puertos'
+                : 'Puerto preferido: $_puertoSeleccionado',
+            ),
             backgroundColor: Colors.green,
           ),
         );

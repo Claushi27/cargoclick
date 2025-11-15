@@ -16,7 +16,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.mycompany.CounterApp"
+    namespace = "com.cargoclick.app"
     compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
@@ -40,21 +40,23 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.mycompany.CounterApp"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        applicationId = "com.cargoclick.app"
+        minSdkVersion = flutter.minSdkVersion
+        targetSdk = 35
+        versionCode 1
+        versionName "1.0.0"
+        multiDexEnabled true
     }
 
     buildTypes {
+        debug {
+            // No signing for debug builds
+        }
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.release
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }

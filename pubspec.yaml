@@ -39,6 +39,7 @@ flutter:
 
 flutter_launcher_icons:
   android: true
-  ios: true
-  image_path: assets/icons/dreamflow_icon.jpg
-  remove_alpha_ios: true
+  ios: false
+  image_path: "assets/logo.png"
+  adaptive_icon_background: "#1A3A6B"
+  adaptive_icon_foreground: "assets/logo.png"

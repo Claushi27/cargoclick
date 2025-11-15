@@ -43,6 +43,12 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Android Keystore (CRÍTICO - NO SUBIR)
+*.jks
+*.keystore
+android/key.properties
+android/upload-keystore.jks
+
 # Firebase
 .firebase/
 firebase-debug.log

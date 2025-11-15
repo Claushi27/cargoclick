@@ -1,0 +1,12 @@
+# ====================================
+# TEMPLATE - key.properties
+# ====================================
+#
+# 1. Renombra este archivo a: key.properties
+# 2. Rellena las contraseñas que usaste al crear el keystore
+# 3. NO subas este archivo a Git (ya está en .gitignore)
+
+storePassword=CargoClick2025.
+keyPassword=CargoClick2025.
+keyAlias=upload
+storeFile=upload-keystore.jks

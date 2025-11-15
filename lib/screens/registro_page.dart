@@ -199,9 +199,11 @@ class _RegistroPageState extends State<RegistroPage> {
                     children: [
                       const Icon(Icons.badge_outlined, size: 18),
                       const SizedBox(width: 8),
-                      Text(
-                        'Rol asignado: Chofer',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      Expanded(
+                        child: Text(
+                          'Rol asignado: Chofer',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
                       ),
                     ],
                   ),

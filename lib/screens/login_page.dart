@@ -44,10 +44,49 @@ class _LoginPageState extends State<LoginPage> {
       }
     } catch (e) {
       if (mounted) {
+        String mensaje = 'Error al iniciar sesión';
+        IconData icono = Icons.error_outline;
+        
+        final errorStr = e.toString().toLowerCase();
+        
+        if (errorStr.contains('user-not-found') || errorStr.contains('user not found')) {
+          mensaje = 'Email no registrado';
+          icono = Icons.person_off;
+        } else if (errorStr.contains('wrong-password') || errorStr.contains('invalid-credential')) {
+          mensaje = 'Contraseña incorrecta';
+          icono = Icons.lock_outline;
+        } else if (errorStr.contains('invalid-email')) {
+          mensaje = 'Email inválido';
+          icono = Icons.email_outlined;
+        } else if (errorStr.contains('network')) {
+          mensaje = 'Sin conexión a internet';
+          icono = Icons.wifi_off;
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al iniciar sesión: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Row(
+              children: [
+                Icon(icono, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    mensaje,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.orange.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 4),
           ),
         );
       }

@@ -508,10 +508,51 @@ class _AsignarFletePageState extends State<AsignarFletePage> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
+        
+        // Extraer mensaje más limpio
+        String mensaje = e.toString();
+        IconData icono = Icons.error_outline;
+        
+        if (mensaje.contains('ya tiene un flete activo')) {
+          // Extraer el número de contenedor si existe
+          final match = RegExp(r'\(([^)]+)\)').firstMatch(mensaje);
+          final contenedor = match?.group(1) ?? 'sin número';
+          
+          if (mensaje.contains('chofer')) {
+            mensaje = 'Chofer ocupado en contenedor $contenedor';
+            icono = Icons.person_off;
+          } else {
+            mensaje = 'Camión ocupado en contenedor $contenedor';
+            icono = Icons.local_shipping_outlined;
+          }
+        } else if (mensaje.contains('StateError:')) {
+          mensaje = mensaje.replaceAll('StateError:', '').trim();
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al asignar flete: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Row(
+              children: [
+                Icon(icono, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    mensaje,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.orange.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 4),
           ),
         );
       }

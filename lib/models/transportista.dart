@@ -10,6 +10,7 @@ class Transportista {
   final DateTime createdAt;
   final DateTime updatedAt;
   final double? tarifaMinima; // Tarifa mínima aceptable
+  final String? puertoPreferido; // 'Valparaiso', 'San Antonio', o null (ambos)
   
   // MÓDULO 1: Validación por Cliente
   final bool isValidadoCliente; // Estado de validación
@@ -26,6 +27,7 @@ class Transportista {
     required this.createdAt,
     required this.updatedAt,
     this.tarifaMinima,
+    this.puertoPreferido,
     this.isValidadoCliente = false,
     this.clienteValidadorId,
     this.fechaValidacion,
@@ -43,6 +45,7 @@ class Transportista {
     tarifaMinima: json['tarifa_minima'] != null 
         ? (json['tarifa_minima'] as num).toDouble() 
         : null,
+    puertoPreferido: json['puerto_preferido'] as String?,
     isValidadoCliente: json['is_validado_cliente'] as bool? ?? false,
     clienteValidadorId: json['cliente_validador_id'] as String?,
     fechaValidacion: json['fecha_validacion'] != null
@@ -60,6 +63,7 @@ class Transportista {
     'created_at': Timestamp.fromDate(createdAt),
     'updated_at': Timestamp.fromDate(updatedAt),
     if (tarifaMinima != null) 'tarifa_minima': tarifaMinima,
+    if (puertoPreferido != null) 'puerto_preferido': puertoPreferido,
     'is_validado_cliente': isValidadoCliente,
     if (clienteValidadorId != null) 'cliente_validador_id': clienteValidadorId,
     if (fechaValidacion != null) 'fecha_validacion': Timestamp.fromDate(fechaValidacion!),
@@ -75,6 +79,7 @@ class Transportista {
     DateTime? createdAt,
     DateTime? updatedAt,
     double? tarifaMinima,
+    String? puertoPreferido,
     bool? isValidadoCliente,
     String? clienteValidadorId,
     DateTime? fechaValidacion,
@@ -88,6 +93,7 @@ class Transportista {
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     tarifaMinima: tarifaMinima ?? this.tarifaMinima,
+    puertoPreferido: puertoPreferido ?? this.puertoPreferido,
     isValidadoCliente: isValidadoCliente ?? this.isValidadoCliente,
     clienteValidadorId: clienteValidadorId ?? this.clienteValidadorId,
     fechaValidacion: fechaValidacion ?? this.fechaValidacion,

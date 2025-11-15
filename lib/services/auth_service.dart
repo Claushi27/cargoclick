@@ -153,6 +153,18 @@ class AuthService {
 
   Future<void> logout() async {
     if (!_isBackendReady) return;
+    
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        // Remover token FCM antes de hacer logout
+        final notificationService = NotificationService();
+        await notificationService.removeTokenFromFirestore(user.uid);
+      } catch (e) {
+        print('⚠️ Error removiendo token FCM: $e');
+      }
+    }
+    
     await FirebaseAuth.instance.signOut();
   }
 
@@ -304,6 +316,21 @@ class AuthService {
         .doc(transportistaId)
         .update({
           'tarifa_minima': tarifaMinima,
+          'updated_at': Timestamp.now(),
+        });
+  }
+
+  /// Actualiza el puerto preferido del transportista
+  Future<void> actualizarPuertoPreferido(String transportistaId, String? puertoPreferido) async {
+    if (!_isBackendReady) {
+      throw StateError('Firebase no está configurado.');
+    }
+
+    await FirebaseFirestore.instance
+        .collection('transportistas')
+        .doc(transportistaId)
+        .update({
+          'puerto_preferido': puertoPreferido,
           'updated_at': Timestamp.now(),
         });
   }

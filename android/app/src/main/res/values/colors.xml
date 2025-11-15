@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Color principal de la app (azul CargoClick) -->
+    <color name="splash_color">#1A3A6B</color>
+    
+    <!-- Colores adicionales -->
+    <color name="primary_color">#1A3A6B</color>
+    <color name="secondary_color">#FF7A3D</color>
+    <color name="background_color">#FFFFFF</color>
+	<color name="ic_launcher_background">#1A3A6B</color>
+</resources>

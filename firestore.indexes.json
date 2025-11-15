@@ -109,6 +109,20 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "cambios_asignacion",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "flete_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fecha_cambio",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
