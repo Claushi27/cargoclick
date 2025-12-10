@@ -4,7 +4,6 @@ import 'package:cargoclick/models/usuario.dart';
 import 'package:cargoclick/models/camion.dart';
 import 'package:cargoclick/services/flota_service.dart';
 import 'package:cargoclick/services/flete_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AsignarFletePage extends StatefulWidget {
   final Flete flete;
@@ -27,6 +26,17 @@ class _AsignarFletePageState extends State<AsignarFletePage> {
   Usuario? _choferSeleccionado;
   Camion? _camionSeleccionado;
   bool _isLoading = false;
+  
+  // Controllers para RUTs de puerto (ingresados por transportista)
+  final _rutIngresoStiController = TextEditingController();
+  final _rutIngresoPcController = TextEditingController();
+
+  @override
+  void dispose() {
+    _rutIngresoStiController.dispose();
+    _rutIngresoPcController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -400,6 +410,74 @@ class _AsignarFletePageState extends State<AsignarFletePage> {
             ),
             const SizedBox(height: 32),
 
+            // ========== RUTs DE PUERTO (Ingresados por Transportista) ==========
+            Text(
+              'RUTs de Acceso a Puerto',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue.shade800, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Ingresa los RUTs que usarás para acceder a los puertos',
+                      style: TextStyle(
+                        color: Colors.blue.shade900,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Campo RUT STI
+            TextFormField(
+              controller: _rutIngresoStiController,
+              decoration: InputDecoration(
+                labelText: 'RUT Ingreso STI (opcional)',
+                hintText: 'Ej: 12345678-9',
+                prefixIcon: const Icon(Icons.badge_outlined),
+                helperText: 'RUT para ingreso a STI (San Antonio Terminal Internacional)',
+                helperMaxLines: 2,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              keyboardType: TextInputType.text,
+            ),
+            const SizedBox(height: 16),
+            
+            // Campo RUT PC
+            TextFormField(
+              controller: _rutIngresoPcController,
+              decoration: InputDecoration(
+                labelText: 'RUT Ingreso PC (opcional)',
+                hintText: 'Ej: 12345678-9',
+                prefixIcon: const Icon(Icons.badge_outlined),
+                helperText: 'RUT para ingreso a Puerto de Contenedores',
+                helperMaxLines: 2,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              keyboardType: TextInputType.text,
+            ),
+            const SizedBox(height: 32),
+
             // Botón de confirmar
             SizedBox(
               width: double.infinity,
@@ -488,6 +566,12 @@ class _AsignarFletePageState extends State<AsignarFletePage> {
         transportistaId: widget.transportistaId,
         choferId: _choferSeleccionado!.uid,
         camionId: _camionSeleccionado!.id,
+        rutIngresoSti: _rutIngresoStiController.text.trim().isNotEmpty 
+            ? _rutIngresoStiController.text.trim() 
+            : null,
+        rutIngresoPc: _rutIngresoPcController.text.trim().isNotEmpty 
+            ? _rutIngresoPcController.text.trim() 
+            : null,
       );
 
       if (mounted) {

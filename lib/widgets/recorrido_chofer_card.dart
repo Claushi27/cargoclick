@@ -98,7 +98,7 @@ class RecorridoChoferCard extends StatelessWidget {
                 
                 const SizedBox(height: 24),
                 
-                // MÓDULO 4: Sección HORARIOS IMPORTANTES
+                // MÓDULO 4: Sección SECUENCIA DE ENTREGA
                 if (flete.fechaHoraCarga != null || flete.puertoOrigen != null) ...[
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -115,7 +115,7 @@ class RecorridoChoferCard extends StatelessWidget {
                             Icon(Icons.schedule, color: Colors.amber.shade900, size: 28),
                             const SizedBox(width: 12),
                             Text(
-                              '⏰ HORARIOS IMPORTANTES',
+                              '📋 SECUENCIA DE ENTREGA',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,

@@ -124,11 +124,21 @@ class _FleteDetailPageState extends State<FleteDetailPage> {
                       const SizedBox(height: 4),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          entry.value,
+                        child: SizedBox(
                           height: 150,
                           width: double.infinity,
-                          fit: BoxFit.cover,
+                          child: Image.file(
+                            entry.value,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey[300],
+                                child: const Center(
+                                  child: Icon(Icons.error, color: Colors.red),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ],

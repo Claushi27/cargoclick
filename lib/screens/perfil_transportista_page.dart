@@ -336,7 +336,7 @@ class _PerfilTransportistaPageState extends State<PerfilTransportistaPage> {
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
-                                  'Tarifa Mínima Aceptable',
+                                  'Tarifa Base Flete',
                                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -359,7 +359,7 @@ class _PerfilTransportistaPageState extends State<PerfilTransportistaPage> {
                                       controller: _tarifaMinimaController,
                                       keyboardType: TextInputType.number,
                                       decoration: InputDecoration(
-                                        labelText: 'Tarifa mínima (CLP)',
+                                        labelText: 'Tarifa base (CLP)',
                                         hintText: 'Ej: 150000',
                                         prefixText: '\$ ',
                                         border: OutlineInputBorder(
@@ -458,6 +458,126 @@ class _PerfilTransportistaPageState extends State<PerfilTransportistaPage> {
                         ),
                       ),
                       const SizedBox(height: 32),
+                       // Puerto Preferido
+     const SizedBox(height: 20),
+     Card(
+       child: Padding(
+         padding: const EdgeInsets.all(16),
+         child: Column(
+           crossAxisAlignment: CrossAxisAlignment.start,
+           children: [
+             Row(
+               children: [
+                 Icon(
+                   Icons.location_on,
+                   color: Theme.of(context).colorScheme.primary,
+                 ),
+                 const SizedBox(width: 12),
+                 Text(
+                   'Puerto Preferido',
+                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                     fontWeight: FontWeight.w600,
+                   ),
+                 ),
+               ],
+             ),
+             const SizedBox(height: 16),
+             if (_editandoPuerto) ...[
+               DropdownButtonFormField<String>(
+                 value: _puertoSeleccionado,
+                 decoration: InputDecoration(
+                   labelText: 'Selecciona puerto',
+                   border: OutlineInputBorder(
+                     borderRadius: BorderRadius.circular(8),
+                   ),
+                 ),
+                 items: const [
+                   DropdownMenuItem(value: null, child: Text('Ambos puertos')),
+                   DropdownMenuItem(value: 'Valparaiso', child: Text('Valparaíso')),
+                   DropdownMenuItem(value: 'San Antonio', child: Text('San Antonio')),
+                 ],
+                 onChanged: (value) {
+                   setState(() {
+                     _puertoSeleccionado = value;
+                   });
+                 },
+               ),
+               const SizedBox(height: 12),
+               Row(
+                 mainAxisAlignment: MainAxisAlignment.end,
+                 children: [
+                   TextButton(
+                     onPressed: () {
+                       setState(() {
+                         _editandoPuerto = false;
+                         _puertoSeleccionado = _transportista?.puertoPreferido;
+                       });
+                     },
+                     child: const Text('Cancelar'),
+                   ),
+                   const SizedBox(width: 8),
+                   ElevatedButton(
+                     onPressed: _guardarPuertoPreferido,
+                     child: const Text('Guardar'),
+                   ),
+                 ],
+               ),
+             ] else ...[
+               Container(
+                 padding: const EdgeInsets.all(12),
+                 decoration: BoxDecoration(
+                   color: _transportista?.puertoPreferido != null
+                       ? Colors.blue.shade50
+                       : Colors.grey.shade100,
+                   borderRadius: BorderRadius.circular(8),
+                 ),
+                 child: Row(
+                   children: [
+                     Icon(
+                       Icons.directions_boat,
+                       color: _transportista?.puertoPreferido != null
+                           ? Colors.blue
+                           : Colors.grey,
+                     ),
+                     const SizedBox(width: 12),
+                     Expanded(
+                       child: Column(
+                         crossAxisAlignment: CrossAxisAlignment.start,
+                         children: [
+                           Text(
+                             _transportista?.puertoPreferido != null
+                                 ? 'Filtro activo'
+                                 : 'Ver todos los puertos',
+                             style: TextStyle(
+                               fontSize: 12,
+                               color: Colors.grey.shade600,
+                             ),
+                           ),
+                           Text(
+                             _transportista?.puertoPreferido ?? 'Ambos puertos',
+                             style: TextStyle(
+                               fontSize: 16,
+                               fontWeight: FontWeight.bold,
+                               color: _transportista?.puertoPreferido != null
+                                   ? Colors.blue.shade700
+                                   : Colors.grey.shade700,
+                             ),
+                           ),
+                         ],
+                       ),
+                     ),
+                     IconButton(
+                       icon: const Icon(Icons.edit),
+                       onPressed: () => setState(() => _editandoPuerto = true),
+                     ),
+                   ],
+                 ),
+               ),
+             ],
+           ],
+         ),
+       ),
+     ),
 
                       // Estadísticas de Rating
                       Text(

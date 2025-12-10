@@ -429,7 +429,7 @@ class _GestionFlotaPageState extends State<GestionFlotaPage> with SingleTickerPr
     final companiaSeguroController = TextEditingController();
     final nombreSeguroController = TextEditingController();
     DateTime? fechaVencimiento;
-    String tipoSeleccionado = 'CTN Std 20';
+    String tipoSeleccionado = 'Plana';
 
     final tiposCamion = [
       'CTN Std 20',
@@ -679,11 +679,12 @@ class _GestionFlotaPageState extends State<GestionFlotaPage> with SingleTickerPr
     String tipoSeleccionado = camion.tipo;
 
     final tiposCamion = [
-      'CTN Std 20',
-      'CTN Std 40',
-      'HC',
-      'OT',
-      'reefer',
+      'Plana',
+      'Chasis',
+      'Multiproposito',
+      'Furgón',
+      'Reefer',
+      'Equipo Especial',
     ];
 
     showDialog(
@@ -711,7 +712,7 @@ class _GestionFlotaPageState extends State<GestionFlotaPage> with SingleTickerPr
                   DropdownButtonFormField<String>(
                     value: tipoSeleccionado,
                     decoration: const InputDecoration(
-                      labelText: 'Tipo de Contenedor',
+                      labelText: 'Tipo de Rampla',
                       prefixIcon: Icon(Icons.category),
                     ),
                     items: tiposCamion

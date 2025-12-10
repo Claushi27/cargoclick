@@ -123,7 +123,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Marketplace de Transporte Marítimo',
+                    'La App de la Logística Terrestre',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
@@ -200,21 +200,25 @@ class _LoginPageState extends State<LoginPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        '¿No tienes cuenta? ',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(builder: (context) => const RegistroPage()),
-                          );
-                        },
+                      Flexible(
                         child: Text(
-                          'Regístrate como Chofer',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.secondary,
-                            fontWeight: FontWeight.bold,
+                          '¿No tienes cuenta? ',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                      Flexible(
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (context) => const RegistroPage()),
+                            );
+                          },
+                          child: Text(
+                            'Regístrate como Chofer',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.secondary,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
@@ -224,32 +228,36 @@ class _LoginPageState extends State<LoginPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        '¿Tienes una empresa? ',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(builder: (context) => const RegistroTransportistaPage()),
-                          );
-                        },
+                      Flexible(
                         child: Text(
-                          'Regístrate como Transportista',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          '¿Tienes una empresa? ',
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+                      Flexible(
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (context) => const RegistroTransportistaPage()),
+                            );
+                          },
+                          child: Text(
+                            'Regístrate como Transportista',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                                   fontWeight: FontWeight.bold,
+                                 ),
+                               ),
+                             ),
+                           ),
+                         ],
+                       ),
+                     ],
+                   ),
+                 ),
+               ),
+             ),
+           ),
+         );
+       }
+     }

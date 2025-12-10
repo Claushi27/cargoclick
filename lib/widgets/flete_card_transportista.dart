@@ -79,11 +79,33 @@ class FleteCardTransportista extends StatelessWidget {
                           color: Colors.green.shade700,
                         ),
                       ),
-                      Text(
-                        'CLP',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'CLP',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.blue.shade200, width: 0.5),
+                            ),
+                            child: Text(
+                              'IVA incluido',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.blue.shade700,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       // Badge de compatibilidad con tarifa
                       if (tarifaMinimaTransportista != null) ...[

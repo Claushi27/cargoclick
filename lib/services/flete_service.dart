@@ -328,6 +328,8 @@ class FleteService {
     required String transportistaId,
     required String choferId,
     required String camionId,
+    String? rutIngresoSti,
+    String? rutIngresoPc,
   }) async {
     print('🚀 [asignarFlete] Iniciando asignación');
     print('   FleteID: $fleteId');
@@ -384,7 +386,7 @@ class FleteService {
       
       // Actualizar flete con asignación completa
       print('✍️ [asignarFlete] Actualizando flete...');
-      await db.collection('fletes').doc(fleteId).update({
+      final updateData = {
         'estado': 'asignado',
         'transportista_id': transportistaId,
         'transportista_asignado': choferId, // Compatibilidad legacy
@@ -392,7 +394,17 @@ class FleteService {
         'camion_asignado': camionId,
         'fecha_asignacion': Timestamp.fromDate(now),
         'updated_at': Timestamp.fromDate(now),
-      });
+      };
+      
+      // Agregar RUTs de puerto si fueron proporcionados
+      if (rutIngresoSti != null && rutIngresoSti.isNotEmpty) {
+        updateData['rut_ingreso_sti'] = rutIngresoSti;
+      }
+      if (rutIngresoPc != null && rutIngresoPc.isNotEmpty) {
+        updateData['rut_ingreso_pc'] = rutIngresoPc;
+      }
+      
+      await db.collection('fletes').doc(fleteId).update(updateData);
       print('✅ [asignarFlete] Flete actualizado exitosamente');
       
       final clienteId = fleteData['cliente_id'] as String;

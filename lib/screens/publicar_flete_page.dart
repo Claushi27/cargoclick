@@ -32,8 +32,6 @@ class _PublicarFletePageState extends State<PublicarFletePage> {
   
   // MÓDULO 2: Controllers nuevos
   final _valorPerimetroController = TextEditingController();
-  final _rutIngresoStiController = TextEditingController();
-  final _rutIngresoPcController = TextEditingController();
   final _tipoRamplaController = TextEditingController();
   
   final _fleteService = FleteService();
@@ -63,8 +61,6 @@ class _PublicarFletePageState extends State<PublicarFletePage> {
     _serviciosAdicionalesController.dispose();
     // MÓDULO 2
     _valorPerimetroController.dispose();
-    _rutIngresoStiController.dispose();
-    _rutIngresoPcController.dispose();
     _tipoRamplaController.dispose();
     super.dispose();
   }
@@ -157,12 +153,6 @@ class _PublicarFletePageState extends State<PublicarFletePage> {
             ? double.tryParse(_valorPerimetroController.text.trim())
             : null,
         valorAdicionalSobrepeso: _valorAdicionalSobrepeso,
-        rutIngresoSti: _rutIngresoStiController.text.isNotEmpty
-            ? _rutIngresoStiController.text.trim()
-            : null,
-        rutIngresoPc: _rutIngresoPcController.text.isNotEmpty
-            ? _rutIngresoPcController.text.trim()
-            : null,
         tipoDeRampla: _tipoRamplaController.text.isNotEmpty
             ? _tipoRamplaController.text.trim()
             : null,
@@ -503,27 +493,6 @@ class _PublicarFletePageState extends State<PublicarFletePage> {
                   fontStyle: FontStyle.italic,
                 ),
               ),
-              const SizedBox(height: 16),
-              
-              TextFormField(
-                controller: _rutIngresoStiController,
-                decoration: _inputDecoration('RUT Ingreso STI (opcional)', Icons.badge_outlined).copyWith(
-                  helperText: 'RUT para ingreso a STI (San Antonio Terminal Internacional)',
-                ),
-                keyboardType: TextInputType.text,
-                textCapitalization: TextCapitalization.characters,
-              ),
-              const SizedBox(height: 16),
-              
-              TextFormField(
-                controller: _rutIngresoPcController,
-                decoration: _inputDecoration('RUT Ingreso PC (opcional)', Icons.badge_outlined).copyWith(
-                  helperText: 'RUT para ingreso a Puerto de Contenedores',
-                ),
-                keyboardType: TextInputType.text,
-                textCapitalization: TextCapitalization.characters,
-              ),
-              
               const SizedBox(height: 24),
               
               // MÓDULO 2: SECCIÓN INFORMACIÓN DE RAMPLA
@@ -581,7 +550,7 @@ class _PublicarFletePageState extends State<PublicarFletePage> {
               TextFormField(
                 controller: _tarifaController,
                 keyboardType: TextInputType.number,
-                decoration: _inputDecoration('Tarifa Ofrecida (\$) *', Icons.payments_outlined),
+                decoration: _inputDecoration('Tarifa Base (\$) + IVA *', Icons.payments_outlined),
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Requerido';
                   if (double.tryParse(value) == null) return 'Tarifa inválida';
